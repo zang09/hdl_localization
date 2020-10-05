@@ -24,6 +24,7 @@
 
 #include <hdl_localization/pose_estimator.hpp>
 
+using namespace std;
 
 namespace hdl_localization {
 
@@ -36,7 +37,6 @@ public:
   virtual ~HdlLocalizationNodelet() {
   }
 
-
   void onInit() override {
     nh = getNodeHandle();
     mt_nh = getMTNodeHandle();
@@ -44,8 +44,6 @@ public:
 
     processing_time.resize(16);
     initialize_params();
-    
-    odom_child_frame_id = private_nh.param<std::string>("odom_child_frame_id", "base_link");
 
     use_imu = private_nh.param<bool>("use_imu", true);
     invert_imu = private_nh.param<bool>("invert_imu", false);
@@ -59,11 +57,12 @@ public:
 
     pose_pub = nh.advertise<nav_msgs::Odometry>("/odom", 5, false);
     aligned_pub = nh.advertise<sensor_msgs::PointCloud2>("/aligned_points", 5, false);
+    correctImu_pub = nh.advertise<sensor_msgs::Imu>("/imu_correct", 5);
   }
 
 private:
   void initialize_params() {
-    // intialize scan matching method
+    // initialize scan matching method
     double downsample_resolution = private_nh.param<double>("downsample_resolution", 0.1);
     std::string ndt_neighbor_search_method = private_nh.param<std::string>("ndt_neighbor_search_method", "DIRECT7");
 
@@ -89,7 +88,7 @@ private:
       NODELET_INFO("search_method GICP_OMP is selected");
       registration = gicp;
     }
-     else {
+    else {
       if(ndt_neighbor_search_method == "KDTREE") {
         NODELET_INFO("search_method KDTREE is selected");
       } else {
@@ -99,18 +98,28 @@ private:
       ndt->setNeighborhoodSearchMethod(pclomp::KDTREE);
       registration = ndt;
     }
-    
+
 
     // initialize pose estimator
     if(private_nh.param<bool>("specify_init_pose", true)) {
       NODELET_INFO("initialize pose estimator with specified parameters!!");
       pose_estimator.reset(new hdl_localization::PoseEstimator(registration,
-        ros::Time::now(),
-        Eigen::Vector3f(private_nh.param<double>("init_pos_x", 0.0), private_nh.param<double>("init_pos_y", 0.0), private_nh.param<double>("init_pos_z", 0.0)),
-        Eigen::Quaternionf(private_nh.param<double>("init_ori_w", 1.0), private_nh.param<double>("init_ori_x", 0.0), private_nh.param<double>("init_ori_y", 0.0), private_nh.param<double>("init_ori_z", 0.0)),
-        private_nh.param<double>("cool_time_duration", 0.5)
-      ));
+                                                               ros::Time::now(),
+                                                               Eigen::Vector3f(private_nh.param<double>("init_pos_x", 0.0), private_nh.param<double>("init_pos_y", 0.0), private_nh.param<double>("init_pos_z", 0.0)),
+                                                               Eigen::Quaternionf(private_nh.param<double>("init_ori_w", 1.0), private_nh.param<double>("init_ori_x", 0.0), private_nh.param<double>("init_ori_y", 0.0), private_nh.param<double>("init_ori_z", 0.0)),
+                                                               private_nh.param<double>("cool_time_duration", 0.5)
+                                                               ));
     }
+
+    // initialize imu params
+    private_nh.param<vector<double>>("/hdl_localization/extrinsicRot", extRotV, vector<double>());
+    private_nh.param<vector<double>>("/hdl_localization/extrinsicRPY", extRPYV, vector<double>());
+    private_nh.param<vector<double>>("/hdl_localization/extrinsicTrans", extTransV, vector<double>());
+    extRot = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(extRotV.data(), 3, 3);
+    extRPY = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(extRPYV.data(), 3, 3);
+    extTrans = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(extTransV.data(), 3, 1);
+    extQRPY = Eigen::Quaterniond(extRPY);
+    //std::cout << extRot << std::endl;
   }
 
 private:
@@ -121,6 +130,10 @@ private:
   void imu_callback(const sensor_msgs::ImuConstPtr& imu_msg) {
     std::lock_guard<std::mutex> lock(imu_data_mutex);
     imu_data.push_back(imu_msg);
+
+    sensor_msgs::Imu thisImu = imuConverter(*imu_msg);
+    thisImu.header.frame_id = "base_link";
+    correctImu_pub.publish(thisImu);
   }
 
   /**
@@ -140,20 +153,20 @@ private:
     }
 
     const auto& stamp = points_msg->header.stamp;
-    pcl::PointCloud<PointT>::Ptr pcl_cloud(new pcl::PointCloud<PointT>());
-    pcl::fromROSMsg(*points_msg, *pcl_cloud);
+    pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>());
+    pcl::fromROSMsg(*points_msg, *cloud);
 
-    if(pcl_cloud->empty()) {
+    if(cloud->empty()) {
       NODELET_ERROR("cloud is empty!!");
       return;
     }
 
-    // transform pointcloud into odom_child_frame_id  
-    pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>());  
-    if(!pcl_ros::transformPointCloud(odom_child_frame_id, *pcl_cloud, *cloud, this->tf_listener)) {
-        NODELET_ERROR("point cloud cannot be transformed into target frame!!");
-        return;
-    } 
+    // transform pointcloud into odom_child_frame_id
+    //    pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>());
+    //    if(!pcl_ros::transformPointCloud("velodyne", *pcl_cloud, *cloud, this->tf_listener)) {
+    //      NODELET_ERROR("point cloud cannot be transformed into target frame!!");
+    //      return;
+    //    }
 
     auto filtered = downsample(cloud);
 
@@ -185,7 +198,7 @@ private:
     // NODELET_INFO_STREAM("processing_time: " << avg_processing_time * 1000.0 << "[msec]");
 
     if(aligned_pub.getNumSubscribers()) {
-      aligned->header.frame_id = "map";
+      aligned->header.frame_id = "odom";
       aligned->header.stamp = cloud->header.stamp;
       aligned_pub.publish(aligned);
     }
@@ -199,9 +212,9 @@ private:
    */
   void globalmap_callback(const sensor_msgs::PointCloud2ConstPtr& points_msg) {
     NODELET_INFO("globalmap received!");
-    pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>());
-    pcl::fromROSMsg(*points_msg, *cloud);
-    globalmap = cloud;
+    pcl::PointCloud<PointT>::Ptr map_cloud(new pcl::PointCloud<PointT>());
+    pcl::fromROSMsg(*points_msg, *map_cloud);
+    globalmap = map_cloud;
 
     registration->setInputTarget(globalmap);
   }
@@ -222,7 +235,7 @@ private:
             Eigen::Vector3f(p.x, p.y, p.z),
             Eigen::Quaternionf(q.w, q.x, q.y, q.z),
             private_nh.param<double>("cool_time_duration", 0.5))
-    );
+          );
   }
 
   /**
@@ -250,25 +263,44 @@ private:
    */
   void publish_odometry(const ros::Time& stamp, const Eigen::Matrix4f& pose) {
     // broadcast the transform over tf
-    geometry_msgs::TransformStamped odom_trans = matrix2transform(stamp, pose, "map", odom_child_frame_id);
-    pose_broadcaster.sendTransform(odom_trans);
+
+    //    geometry_msgs::TransformStamped odom_trans = matrix2transform(stamp, pose, "map", odom_child_frame_id);
+    //    pose_broadcaster.sendTransform(odom_trans);
+
+    static tf::TransformBroadcaster tfMap2Odom;
+    static tf::Transform map_to_odom = tf::Transform(tf::createQuaternionFromRPY(0, 0, 0), tf::Vector3(0, 0, 0));
+    tfMap2Odom.sendTransform(tf::StampedTransform(map_to_odom, stamp, "map", "odom"));
 
     // publish the transform
     nav_msgs::Odometry odom;
     odom.header.stamp = stamp;
-    odom.header.frame_id = "map";
+    odom.header.frame_id = "odom";
+
+    Eigen::Quaternionf quat(pose.block<3, 3>(0, 0));
+    quat.normalize();
+    geometry_msgs::Quaternion odom_quat;
+    odom_quat.w = quat.w();
+    odom_quat.x = quat.x();
+    odom_quat.y = quat.y();
+    odom_quat.z = quat.z();
 
     odom.pose.pose.position.x = pose(0, 3);
     odom.pose.pose.position.y = pose(1, 3);
     odom.pose.pose.position.z = pose(2, 3);
-    odom.pose.pose.orientation = odom_trans.transform.rotation;
+    odom.pose.pose.orientation = odom_quat;
 
-    odom.child_frame_id = odom_child_frame_id;
+    //odom.child_frame_id = odom_child_frame_id;
     odom.twist.twist.linear.x = 0.0;
     odom.twist.twist.linear.y = 0.0;
     odom.twist.twist.angular.z = 0.0;
 
     pose_pub.publish(odom);
+
+    static tf::TransformBroadcaster tfOdom2BaseLink;
+    tf::Transform tCur;
+    tf::poseMsgToTF(odom.pose.pose, tCur);
+    tf::StampedTransform odom_2_baselink = tf::StampedTransform(tCur, stamp, "odom", "base_link");
+    tfOdom2BaseLink.sendTransform(odom_2_baselink);
   }
 
   /**
@@ -301,12 +333,44 @@ private:
     return odom_trans;
   }
 
+  sensor_msgs::Imu imuConverter(const sensor_msgs::Imu& imu_in)
+  {
+    sensor_msgs::Imu imu_out = imu_in;
+    // rotate acceleration
+    Eigen::Vector3d acc(imu_in.linear_acceleration.x, imu_in.linear_acceleration.y, imu_in.linear_acceleration.z);
+    acc = extRot * acc;
+    imu_out.linear_acceleration.x = acc.x();
+    imu_out.linear_acceleration.y = acc.y();
+    imu_out.linear_acceleration.z = acc.z();
+    // rotate gyroscope
+    Eigen::Vector3d gyr(imu_in.angular_velocity.x, imu_in.angular_velocity.y, imu_in.angular_velocity.z);
+    gyr = extRot * gyr;
+    imu_out.angular_velocity.x = gyr.x();
+    imu_out.angular_velocity.y = gyr.y();
+    imu_out.angular_velocity.z = gyr.z();
+
+    Eigen::Quaterniond q_from(imu_in.orientation.w, imu_in.orientation.x, imu_in.orientation.y, imu_in.orientation.z);
+    Eigen::Quaterniond q_final = q_from * extQRPY;
+    imu_out.orientation.x = q_final.x();
+    imu_out.orientation.y = q_final.y();
+    imu_out.orientation.z = q_final.z();
+    imu_out.orientation.w = q_final.w();
+
+    if (sqrt(q_final.x()*q_final.x() + q_final.y()*q_final.y() + q_final.z()*q_final.z() + q_final.w()*q_final.w()) < 0.1)
+    {
+      ROS_ERROR("Invalid quaternion, please use a 9-axis IMU!");
+      ros::shutdown();
+    }
+
+    return imu_out;
+  }
+
 private:
   // ROS
   ros::NodeHandle nh;
   ros::NodeHandle mt_nh;
   ros::NodeHandle private_nh;
-  
+
   std::string odom_child_frame_id;
 
   bool use_imu;
@@ -318,6 +382,8 @@ private:
 
   ros::Publisher pose_pub;
   ros::Publisher aligned_pub;
+  ros::Publisher correctImu_pub;
+
   tf::TransformBroadcaster pose_broadcaster;
   tf::TransformListener tf_listener;
 
@@ -336,6 +402,15 @@ private:
 
   // processing time buffer
   boost::circular_buffer<double> processing_time;
+
+  // IMU
+  vector<double> extRotV;
+  vector<double> extRPYV;
+  vector<double> extTransV;
+  Eigen::Matrix3d extRot;
+  Eigen::Matrix3d extRPY;
+  Eigen::Vector3d extTrans;
+  Eigen::Quaterniond extQRPY;
 };
 
 }
