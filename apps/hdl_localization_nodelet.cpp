@@ -152,7 +152,8 @@ private:
       return;
     }
 
-    const auto& stamp = points_msg->header.stamp;
+    // get timestamp
+    cloud_header = points_msg->header;
     pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>());
     pcl::fromROSMsg(*points_msg, *cloud);
 
@@ -172,12 +173,12 @@ private:
 
     // predict
     if(!use_imu) {
-      pose_estimator->predict(stamp, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
+      pose_estimator->predict(cloud_header.stamp, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
     } else {
       std::lock_guard<std::mutex> lock(imu_data_mutex);
       auto imu_iter = imu_data.begin();
       for(imu_iter; imu_iter != imu_data.end(); imu_iter++) {
-        if(stamp < (*imu_iter)->header.stamp) {
+        if(cloud_header.stamp < (*imu_iter)->header.stamp) {
           break;
         }
         const auto& acc = (*imu_iter)->linear_acceleration;
@@ -189,9 +190,9 @@ private:
     }
 
     // correct
-    auto t1 = ros::WallTime::now();
+    auto t1 = ros::Time::now();
     auto aligned = pose_estimator->correct(filtered);
-    auto t2 = ros::WallTime::now();
+    auto t2 = ros::Time::now();
 
     processing_time.push_back((t2 - t1).toSec());
     double avg_processing_time = std::accumulate(processing_time.begin(), processing_time.end(), 0.0) / processing_time.size();
@@ -203,7 +204,7 @@ private:
       aligned_pub.publish(aligned);
     }
 
-    publish_odometry(points_msg->header.stamp, pose_estimator->matrix());
+    publish_odometry(cloud_header.stamp, pose_estimator->matrix());
   }
 
   /**
@@ -231,7 +232,7 @@ private:
     pose_estimator.reset(
           new hdl_localization::PoseEstimator(
             registration,
-            ros::Time::now(),
+            cloud_header.stamp,
             Eigen::Vector3f(p.x, p.y, p.z),
             Eigen::Quaternionf(q.w, q.x, q.y, q.z),
             private_nh.param<double>("cool_time_duration", 0.5))
@@ -387,6 +388,8 @@ private:
   tf::TransformBroadcaster pose_broadcaster;
   tf::TransformListener tf_listener;
 
+  std_msgs::Header cloud_header;
+
   // imu input buffer
   std::mutex imu_data_mutex;
   std::vector<sensor_msgs::ImuConstPtr> imu_data;
@@ -411,6 +414,7 @@ private:
   Eigen::Matrix3d extRPY;
   Eigen::Vector3d extTrans;
   Eigen::Quaterniond extQRPY;
+
 };
 
 }
