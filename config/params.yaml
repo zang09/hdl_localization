@@ -19,11 +19,11 @@ navsat:
   use_odometry_yaw: false
   broadcast_utm_transform: false
   broadcast_utm_transform_as_parent_frame: false
-  publish_filtered_gps: true
+  publish_filtered_gps: false
 
 # EKF for Navsat
 ekf_gps:
-  publish_tf: false
+  publish_tf: true
   map_frame: map
   odom_frame: odom
   base_link_frame: base_link
@@ -31,7 +31,9 @@ ekf_gps:
 
   frequency: 50
   two_d_mode: false
-  sensor_timeout: 0.01
+  sensor_timeout: 0.1
+  transform_time_offset: 0.05 
+  
   # -------------------------------------
   # External IMU:
   # -------------------------------------
