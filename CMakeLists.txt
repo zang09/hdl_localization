@@ -15,6 +15,9 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   sensor_msgs
+  nav_msgs
+  geometry_msgs
+  message_generation
   ndt_omp
 )
 
@@ -33,6 +36,17 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+########################
+## message generation ##
+########################
+add_service_files(
+  DIRECTORY srv
+  FILES
+  initGPS.srv
+)
+
+generate_messages(DEPENDENCIES std_msgs)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -43,13 +57,17 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
+
 ###########
 ## Build ##
 ###########
-include_directories(include)
-include_directories(
-  ${catkin_INCLUDE_DIRS}
-)
+# Pub Initial Pose
+add_executable(pubInitialPose src/pubInitialPose.cpp)
+target_link_libraries(pubInitialPose ${catkin_LIBRARIES})
 
 # nodelets
 add_library(hdl_localization_nodelet apps/hdl_localization_nodelet.cpp)
