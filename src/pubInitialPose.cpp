@@ -43,7 +43,7 @@ public:
   {
     subCorrectIMU_ = nh_.subscribe<sensor_msgs::Imu>("imu_correct", 2000, &initialPose::imuHandler, this, ros::TransportHints().tcpNoDelay());
     subGPS_        = nh_.subscribe<sensor_msgs::NavSatFix> ("pwk7/gps/fix", 200, &initialPose::gpsHandler, this, ros::TransportHints().tcpNoDelay());
-    //subEkfGPS_     = nh_.subscribe<nav_msgs::Odometry>("odometry/filtered", 200, &initialPose::gpsOdomHandler, this, ros::TransportHints().tcpNoDelay());
+    //subEkfGPS_     = nh_.subscribe<nav_msgs::Odometry>("odometry/gps", 200, &initialPose::gpsOdomHandler, this, ros::TransportHints().tcpNoDelay());
 
     pubInitialPose_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
 

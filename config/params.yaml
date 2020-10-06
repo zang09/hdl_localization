@@ -10,7 +10,7 @@ hdl_localization:
                  
 # Navsat (convert GPS coordinates to Cartesian)
 navsat:
-  frequency: 50
+  frequency: 30
   wait_for_datum: false
   delay: 0.0
   magnetic_declination_radians: 0
@@ -29,10 +29,10 @@ ekf_gps:
   base_link_frame: base_link
   world_frame: odom
 
-  frequency: 50
+  frequency: 30
   two_d_mode: false
   sensor_timeout: 0.1
-  transform_time_offset: 0.05 
+  transform_time_offset: 0.1
   
   # -------------------------------------
   # External IMU:
