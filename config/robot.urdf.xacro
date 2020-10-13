@@ -16,14 +16,7 @@
   <joint name="imu_joint" type="fixed">
     <parent link="chassis_link" />
     <child link="imu_link" />
-    <origin xyz="0 0 0" rpy="${PI} 0 ${PI}" />
-  </joint>
-
-  <link name="imu_enu_link"> </link>
-  <joint name="imu_enu_joint" type="fixed">
-    <parent link="imu_link" />
-    <child link="imu_enu_link" />
-    <origin xyz="0 0 0" rpy="${PI} 0 ${PI}" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
   </joint>
 
   <link name="velodyne"> </link>

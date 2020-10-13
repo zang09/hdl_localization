@@ -35,8 +35,8 @@
 
     <!-- globalmap_server_nodelet -->
     <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
-      <param name="globalmap_pcd" value="$(find hdl_localization)/data/map_yonsei.pcd" />
-      <param name="downsample_resolution" value="0.5" />
+        <param name="globalmap_pcd" value="$(find hdl_localization)/data/map_yonsei.pcd" />
+        <param name="downsample_resolution" value="0.5" />
     </node>
 
     <!-- hdl_localization_nodelet -->
@@ -68,5 +68,8 @@
     </node>
     
     <!--- Initial Pose Node -->
-    <node pkg="$(arg project)" type="pubInitialPose" name="pubInitialPose" output="screen" respawn="true" />
+    <node pkg="$(arg project)" type="pubInitialPose" name="pubInitialPose" output="screen" respawn="true">
+        <rosparam param="map_origin">[37.56210566421452, 126.9344763024742, 36.20190576370855]</rosparam>
+    </node>
+    
 </launch>
