@@ -131,6 +131,7 @@ private:
     std::lock_guard<std::mutex> lock(imu_data_mutex);
     imu_data.push_back(imu_msg);
 
+    //pub correct imu
     sensor_msgs::Imu thisImu = imuConverter(*imu_msg);
     thisImu.header.frame_id = "base_link";
     correctImu_pub.publish(thisImu);
