@@ -12,6 +12,7 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <nav_msgs/Odometry.h>
 #include <novatel_gps_msgs/NovatelPosition.h>
 #include <novatel_gps_msgs/NovatelUtmPosition.h>
 #include <hdl_localization/initGPS.h>
@@ -30,6 +31,7 @@ public:
 
   ros::Publisher  pubInitialPose_;
   ros::Publisher  pubFilteredCloud_;
+  ros::Publisher  pubGPSPos_;
 
   ros::ServiceServer getInitGPSServiceServer_;
 
@@ -41,6 +43,8 @@ public:
 
   int    gpsCnt_;
   bool   initFlag_;
+  double mapX_;
+  double mapY_;
   double robotPosX_;
   double robotPosY_;
   double robotPosZ_;
@@ -50,6 +54,8 @@ public:
   initialPose(ros::NodeHandle nh, ros::NodeHandle priv_nh) :
     gpsCnt_(0),
     initFlag_(false),
+    mapX_(0.0),
+    mapY_(0.0),
     robotPosX_(0.0),
     robotPosY_(0.0),
     robotPosZ_(0.0),
@@ -58,11 +64,10 @@ public:
   {
     subGlobalMap_  = nh.subscribe("globalmap", 1, &initialPose::globalmapHandler, this);
     subGPS_        = nh.subscribe<sensor_msgs::NavSatFix>("pwk7/gps/fix", 200, &initialPose::gpsHandler, this, ros::TransportHints().tcpNoDelay());
-    //subCorrectIMU_ = nh.subscribe<sensor_msgs::Imu>("imu_correct", 2000, &initialPose::imuHandler, this, ros::TransportHints().tcpNoDelay());
-    //subBestUtm_    = nh.subscribe<novatel_gps_msgs::NovatelUtmPosition>("pwk7/bestutm", 200, &initialPose::utmHandler, this, ros::TransportHints().tcpNoDelay());
 
-    pubInitialPose_ = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
+    pubInitialPose_   = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
     pubFilteredCloud_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 5, true); //test
+    pubGPSPos_        = nh.advertise<nav_msgs::Odometry>("gps_test_odom", 10);
     getInitGPSServiceServer_ = nh.advertiseService("local/gps", &initialPose::getInitGPSService, this);
 
     if (priv_nh.hasParam("map_origin"))
@@ -74,10 +79,11 @@ public:
         priv_nh.getParam("map_origin", mapConfig);
         ROS_INFO("get map origin!");
 
-        initRequest_.lat = mapConfig[0];
-        initRequest_.lon = mapConfig[1];
+        int zone = 52;
+        double lat = mapConfig[0];
+        double lon = mapConfig[1];
 
-        //printf("%lf, %lf\n", request_.lat, request_.lon);
+        Utm::LatLonToUTMXY(lat, lon, zone, mapX_, mapY_);
       }
       catch (XmlRpc::XmlRpcException &e)
       {
@@ -103,79 +109,69 @@ public:
     int zone = 52;
     Utm::LatLonToUTMXY(lat, lon, zone, robotPosX_, robotPosY_);
 
-    if(gpsCnt_ == 5)
+    double dX = robotPosX_ - preRobotPosX_;
+    double dY = robotPosY_ - preRobotPosY_;
+
+    double distance = sqrt(pow(dX,2)+pow(dY,2));
+
+    if(distance > 0.1 && distance < 10.0)
     {
-        double dX = robotPosX_ - preRobotPosX_;
-        double dY = robotPosY_ - preRobotPosY_;
+      tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, atan2(dY, dX));
+      robotOrientation_.w = q.w();
+      robotOrientation_.x = q.x();
+      robotOrientation_.y = q.y();
+      robotOrientation_.z = q.z();
 
-        tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, atan2(dY, dX));
-        robotOrientation_.w = q.w();
-        robotOrientation_.x = q.x();
-        robotOrientation_.y = q.y();
-        robotOrientation_.z = q.z();
+      nav_msgs::Odometry odom;
+      odom.header.stamp = ros::Time::now();
+      odom.header.frame_id = "map";
 
-        gpsCnt_ = 0;
+      odom.pose.pose.position.x = robotPosX_ - mapX_;
+      odom.pose.pose.position.y = robotPosY_ - mapY_;
+      odom.pose.pose.position.z = 0.0;
+      odom.pose.pose.orientation = robotOrientation_;
+
+      initFlag_ = true;
+      pubGPSPos_.publish(odom);
     }
 
     preRobotPosX_ = robotPosX_;
     preRobotPosY_ = robotPosY_;
-
-    gpsCnt_++;
   }
-
-  /*
-  void imuHandler(const sensor_msgs::Imu::ConstPtr& imuMsg)
-  {
-    robotOrientation_ = imuMsg->orientation;
-  }
-  */
-
-  /*
-  void utmHandler(const novatel_gps_msgs::NovatelUtmPosition::ConstPtr& utmMsg)
-  {
-    robotPosX_ = utmMsg->easting;
-    robotPosY_ = utmMsg->northing;
-
-    float x_error = utmMsg->easting_sigma;
-    float y_error = utmMsg->northing_sigma;
-
-    float error = sqrt(x_error*x_error + y_error*y_error) * 100.;
-    printf("error: %lf\n", error);
-
-    //Service Call
-    if(!initFlag_ && error < 50.0) {
-      getInitGPSService(initRequest_, initResponse_);
-      initFlag_ = true;
-    }
-  }
-  */
 
   bool getInitGPSService(initGPSRequest& req, initGPSResponse& res)
   {
     double mapLat = req.lat;
     double mapLon = req.lon;
 
-    double mapX, mapY;
-    int zone = 52;
+    if((mapX_ == 0.) && (mapY_ == 0.))
+    {
+      int zone = 52;
+      Utm::LatLonToUTMXY(mapLat, mapLon, zone, mapX_, mapY_);
+    }
 
-    Utm::LatLonToUTMXY(mapLat, mapLon, zone, mapX, mapY);
+    if(initFlag_)
+    {
+      geometry_msgs::PoseWithCovarianceStamped poseMsg;
 
-    geometry_msgs::PoseWithCovarianceStamped poseMsg;
+      double tempX = robotPosX_ - mapX_;
+      double tempY = robotPosY_ - mapY_;
+      double currentZ = 0;
 
-    double currentX = robotPosX_ - mapX;
-    double currentY = robotPosY_ - mapY;
-    double currentZ = 0;
+      getHeightFromCloud(tempX, tempY, currentZ);
 
-    getHeightFromCloud(currentX, currentY, currentZ);
+      poseMsg.header.stamp = ros::Time::now();
+      poseMsg.header.frame_id = "map";
+      poseMsg.pose.pose.position.x = robotPosX_ - mapX_;
+      poseMsg.pose.pose.position.y = robotPosY_ - mapY_;
+      poseMsg.pose.pose.position.z = currentZ;
+      poseMsg.pose.pose.orientation = robotOrientation_;
 
-    poseMsg.header.stamp = ros::Time::now();
-    poseMsg.header.frame_id = "map";
-    poseMsg.pose.pose.position.x = currentX;
-    poseMsg.pose.pose.position.y = currentY;
-    poseMsg.pose.pose.position.z = currentZ;
-    poseMsg.pose.pose.orientation = robotOrientation_;
-
-    pubInitialPose_.publish(poseMsg);
+      pubInitialPose_.publish(poseMsg);
+    }
+    else {
+      ROS_ERROR("No orientation now!");
+    }
 
     res.success = true;
     return true;

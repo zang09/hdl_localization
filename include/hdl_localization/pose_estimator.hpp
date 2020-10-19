@@ -88,7 +88,7 @@ public:
    * @param cloud   input cloud
    * @return cloud aligned to the globalmap
    */
-  pcl::PointCloud<PointT>::Ptr correct(const pcl::PointCloud<PointT>::ConstPtr& cloud) {
+  pcl::PointCloud<PointT>::Ptr correct(const pcl::PointCloud<PointT>::ConstPtr& cloud, double &fitnessScore) {
     Eigen::Matrix4f init_guess = Eigen::Matrix4f::Identity();
     init_guess.block<3, 3>(0, 0) = quat().toRotationMatrix();
     init_guess.block<3, 1>(0, 3) = pos();
@@ -96,6 +96,8 @@ public:
     pcl::PointCloud<PointT>::Ptr aligned(new pcl::PointCloud<PointT>());
     registration->setInputSource(cloud);
     registration->align(*aligned, init_guess);
+
+    fitnessScore = registration->getFitnessScore();
 
     Eigen::Matrix4f trans = registration->getFinalTransformation();
     Eigen::Vector3f p = trans.block<3, 1>(0, 3);

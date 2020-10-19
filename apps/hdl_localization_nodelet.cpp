@@ -12,6 +12,7 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <std_msgs/Bool.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <nodelet/nodelet.h>
@@ -57,7 +58,8 @@ public:
 
     pose_pub = nh.advertise<nav_msgs::Odometry>("/odom", 5, false);
     aligned_pub = nh.advertise<sensor_msgs::PointCloud2>("/aligned_points", 5, false);
-    correctImu_pub = nh.advertise<sensor_msgs::Imu>("/imu_correct", 5);
+    alignState_pub = nh.advertise<std_msgs::Bool>("/align_state", 1, true);
+    correctImu_pub = nh.advertise<sensor_msgs::Imu>("/imu_correct", 5, false);
   }
 
 private:
@@ -99,7 +101,6 @@ private:
       registration = ndt;
     }
 
-
     // initialize pose estimator
     if(private_nh.param<bool>("specify_init_pose", true)) {
       NODELET_INFO("initialize pose estimator with specified parameters!!");
@@ -119,7 +120,9 @@ private:
     extRPY = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(extRPYV.data(), 3, 3);
     extTrans = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(extTransV.data(), 3, 1);
     extQRPY = Eigen::Quaterniond(extRPY);
-    //std::cout << extRot << std::endl;
+
+    alignFlag = false;
+    failCnt   = 0;
   }
 
 private:
@@ -134,7 +137,7 @@ private:
     //pub correct imu
     sensor_msgs::Imu thisImu = imuConverter(*imu_msg);
     thisImu.header.frame_id = "base_link";
-    correctImu_pub.publish(thisImu);
+    //correctImu_pub.publish(thisImu);
   }
 
   /**
@@ -144,7 +147,7 @@ private:
   void points_callback(const sensor_msgs::PointCloud2ConstPtr& points_msg) {
     std::lock_guard<std::mutex> estimator_lock(pose_estimator_mutex);
     if(!pose_estimator) {
-      NODELET_ERROR("waiting for initial pose input!!");
+      //NODELET_ERROR("waiting for initial pose input!!");
       return;
     }
 
@@ -191,18 +194,37 @@ private:
     }
 
     // correct
+    double score;
     auto t1 = ros::Time::now();
-    auto aligned = pose_estimator->correct(filtered);
+    auto aligned = pose_estimator->correct(filtered, score);
     auto t2 = ros::Time::now();
 
     processing_time.push_back((t2 - t1).toSec());
     double avg_processing_time = std::accumulate(processing_time.begin(), processing_time.end(), 0.0) / processing_time.size();
-    // NODELET_INFO_STREAM("processing_time: " << avg_processing_time * 1000.0 << "[msec]");
+    //NODELET_INFO_STREAM("processing_time: " << avg_processing_time * 1000.0 << "[msec]");
+    //NODELET_INFO_STREAM("Fitness score: " << score << "\n");
+
+    if(score < 0.2) {
+      if(!alignFlag) {
+        failCnt = 0;
+        alignFlag = true;
+        NODELET_INFO_STREAM("Correct align!");
+      }
+    }
+    else {
+      failCnt++;
+
+      if(failCnt == 3) {
+        alignFlag = false;
+        NODELET_INFO_STREAM("Fail align!");
+      }
+    }
 
     if(aligned_pub.getNumSubscribers()) {
       aligned->header.frame_id = "odom";
       aligned->header.stamp = cloud->header.stamp;
       aligned_pub.publish(aligned);
+      alignState_pub.publish(alignFlag);
     }
 
     publish_odometry(cloud_header.stamp, pose_estimator->matrix());
@@ -384,6 +406,7 @@ private:
 
   ros::Publisher pose_pub;
   ros::Publisher aligned_pub;
+  ros::Publisher alignState_pub;
   ros::Publisher correctImu_pub;
 
   tf::TransformBroadcaster pose_broadcaster;
@@ -416,6 +439,9 @@ private:
   Eigen::Vector3d extTrans;
   Eigen::Quaterniond extQRPY;
 
+  // Flag
+  bool alignFlag;
+  int  failCnt;
 };
 
 }
