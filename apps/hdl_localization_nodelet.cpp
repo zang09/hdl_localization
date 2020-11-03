@@ -49,7 +49,7 @@ public:
     use_imu = private_nh.param<bool>("use_imu", true);
     invert_imu = private_nh.param<bool>("invert_imu", false);
     if(use_imu) {
-      NODELET_INFO("enable imu-based prediction");
+      NODELET_INFO("\033[0;33m----> enable imu-based prediction\033[0m");
       imu_sub = mt_nh.subscribe("/gpsimu_driver/imu_data", 256, &HdlLocalizationNodelet::imu_callback, this);
     }
     points_sub = mt_nh.subscribe("/velodyne_points", 5, &HdlLocalizationNodelet::points_callback, this);
@@ -79,21 +79,22 @@ private:
     ndt->setTransformationEpsilon(0.01);
     ndt->setResolution(ndt_resolution);
     if(ndt_neighbor_search_method == "DIRECT1") {
-      NODELET_INFO("search_method DIRECT1 is selected");
+      NODELET_INFO("\033[0;33m----> search_method DIRECT1 is selected\033[0m");
       ndt->setNeighborhoodSearchMethod(pclomp::DIRECT1);
       registration = ndt;
     } else if(ndt_neighbor_search_method == "DIRECT7") {
-      NODELET_INFO("search_method DIRECT7 is selected");
+      NODELET_INFO("\033[0;33m----> search_method DIRECT7 is selected\033[0m");
       ndt->setNeighborhoodSearchMethod(pclomp::DIRECT7);
       registration = ndt;
     } else if(ndt_neighbor_search_method == "GICP_OMP"){
-      NODELET_INFO("search_method GICP_OMP is selected");
+      NODELET_INFO("\033[0;33m----> search_method GICP_OMP is selected\033[0m");
       registration = gicp;
     }
     else {
       if(ndt_neighbor_search_method == "KDTREE") {
-        NODELET_INFO("search_method KDTREE is selected");
-      } else {
+        NODELET_INFO("\033[0;33m----> search_method KDTREE is selected\033[0m");
+      }
+      else {
         NODELET_WARN("invalid search method was given");
         NODELET_WARN("default method is selected (KDTREE)");
       }
@@ -103,7 +104,7 @@ private:
 
     // initialize pose estimator
     if(private_nh.param<bool>("specify_init_pose", true)) {
-      NODELET_INFO("initialize pose estimator with specified parameters!!");
+      NODELET_INFO("\033[0;33m----> initialize pose estimator with specified parameters!!\033[0m");
       pose_estimator.reset(new hdl_localization::PoseEstimator(registration,
                                                                ros::Time::now(),
                                                                Eigen::Vector3f(private_nh.param<double>("init_pos_x", 0.0), private_nh.param<double>("init_pos_y", 0.0), private_nh.param<double>("init_pos_z", 0.0)),
@@ -235,7 +236,7 @@ private:
    * @param points_msg
    */
   void globalmap_callback(const sensor_msgs::PointCloud2ConstPtr& points_msg) {
-    NODELET_INFO("globalmap received!");
+    NODELET_INFO("\033[0;33m----> globalmap received!\033[0m");
     pcl::PointCloud<PointT>::Ptr map_cloud(new pcl::PointCloud<PointT>());
     pcl::fromROSMsg(*points_msg, *map_cloud);
     globalmap = map_cloud;
