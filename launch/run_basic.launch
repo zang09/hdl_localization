@@ -78,15 +78,5 @@
     <!--- Initial Pose Node -->
     <node pkg="$(arg project)" type="pubInitialPose" name="pubInitialPose" output="screen" respawn="true">
         <rosparam param="map_origin">[37.56210566421452, 126.9344763024742]</rosparam>
-    </node>
-
-    <!--- Start UI Node -->
-    <node pkg="localization_ui" type="localization_ui" name="localization_ui" output="screen" respawn="true">
-        <rosparam param="map_origin">[37.56210566421452, 126.9344763024742, 36.20190576370855]</rosparam>
-    </node>    
-    
-    <!--- Publish fake gps Coordinate -->
-    <node pkg="rostopic" type="rostopic" name="fake_gps_map" args="pub /gps/map sensor_msgs/NavSatFix
-    '{header: {frame_id: map}, latitude: 37.184461349855525, longitude: 127.12689076291069, altitude: 75.51629990898073}'" />
-    
+    </node> 
 </launch>
