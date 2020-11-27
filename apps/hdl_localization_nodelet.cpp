@@ -11,6 +11,7 @@
 
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/Bool.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -52,13 +53,13 @@ public:
       NODELET_INFO("\033[0;33m----> enable imu-based prediction\033[0m");
       imu_sub = mt_nh.subscribe("/gpsimu_driver/imu_data", 256, &HdlLocalizationNodelet::imu_callback, this);
     }
-    points_sub = mt_nh.subscribe("/velodyne_points", 5, &HdlLocalizationNodelet::points_callback, this);
-    globalmap_sub = nh.subscribe("/globalmap", 1, &HdlLocalizationNodelet::globalmap_callback, this);
+    points_sub      = mt_nh.subscribe("/velodyne_points", 5, &HdlLocalizationNodelet::points_callback, this);
+    globalmap_sub   = nh.subscribe("/globalmap", 1, &HdlLocalizationNodelet::globalmap_callback, this);
     initialpose_sub = nh.subscribe("/initialpose", 8, &HdlLocalizationNodelet::initialpose_callback, this);
 
-    pose_pub = nh.advertise<nav_msgs::Odometry>("/odom", 5, false);
-    aligned_pub = nh.advertise<sensor_msgs::PointCloud2>("/aligned_points", 5, false);
+    pose_pub       = nh.advertise<nav_msgs::Odometry>("/odom", 5, false);
     alignState_pub = nh.advertise<std_msgs::Bool>("/align_state", 1, true);
+    aligned_pub    = nh.advertise<sensor_msgs::PointCloud2>("/aligned_points", 5, false);
     correctImu_pub = nh.advertise<sensor_msgs::Imu>("/imu_correct", 5, false);
   }
 
@@ -113,7 +114,7 @@ private:
                                                                ));
     }
 
-    // initialize imu params
+    // initialize params
     private_nh.param<vector<double>>("/hdl_localization/extrinsicRot", extRotV, vector<double>());
     private_nh.param<vector<double>>("/hdl_localization/extrinsicRPY", extRPYV, vector<double>());
     private_nh.param<vector<double>>("/hdl_localization/extrinsicTrans", extTransV, vector<double>());
@@ -406,8 +407,8 @@ private:
   ros::Subscriber initialpose_sub;
 
   ros::Publisher pose_pub;
-  ros::Publisher aligned_pub;
   ros::Publisher alignState_pub;
+  ros::Publisher aligned_pub;
   ros::Publisher correctImu_pub;
 
   tf::TransformBroadcaster pose_broadcaster;

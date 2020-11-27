@@ -66,8 +66,8 @@ include_directories(
 ## Build ##
 ###########
 # Pub Initial Pose
-add_executable(pubInitialPose src/pubInitialPose.cpp)
-target_link_libraries(pubInitialPose ${catkin_LIBRARIES})
+add_executable(initial_pose src/initialPose.cpp)
+target_link_libraries(initial_pose ${catkin_LIBRARIES})
 
 # nodelets
 add_library(hdl_localization_nodelet apps/hdl_localization_nodelet.cpp)

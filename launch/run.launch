@@ -21,32 +21,19 @@
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find hdl_localization)/rviz/stryx_viewer.rviz" />
   
   <!-- Parameters -->
-  <rosparam file="$(find hdl_localization)/config/params.yaml" command="load" /> 
-  
-  <param name="robot_description" command="$(find xacro)/xacro $(find hdl_localization)/config/robot.urdf.xacro --inorder" />
-   
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" />
-    
-  <!-- EKF GPS-->
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_gps" respawn="true" />
-
-  <!-- Navsat -->
-  <node pkg="robot_localization" type="navsat_transform_node" name="navsat" respawn="true">
-      <remap from="imu/data" to="imu_correct" />
-      <remap from="gps/fix" to="pwk7/gps/fix" />
-  </node>
+  <!--rosparam file="$(find hdl_localization)/config/map_coordinate.yaml" command="load" /--> 
+  <rosparam file="$(find hdl_localization)/config/imu_params.yaml" command="load" /> 
     
   <!-- arguments -->
   <arg name="nodelet_manager" default="standalone_nodelet" />
   <arg name="points_topic" default="velodyne_points" />
   <arg name="imu_topic" default="mti30/imu/data" />
 
-  <!-- in case you use velodyne_driver, comment out the following line -->
   <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
 
     <!-- globalmap_server_nodelet -->
     <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
-        <param name="globalmap_pcd" value="$(find hdl_localization)/data/yonsei_full_map.pcd" />
+        <param name="globalmap_pcd" value="$(find hdl_localization)/data/GlobalMap.pcd" />
         <param name="downsample_resolution" value="0.5" />
     </node>
 
@@ -79,17 +66,5 @@
     </node>
     
     <!--- Initial Pose Node -->
-    <node pkg="$(arg project)" type="pubInitialPose" name="pubInitialPose" output="screen" respawn="true">
-        <rosparam param="map_origin">[37.560991036666664, 126.93699022999999]</rosparam>
-    </node>
-
-    <!--- Start UI Node -->
-    <node pkg="localization_ui" type="localization_ui" name="localization_ui" output="screen" respawn="true">
-        <rosparam param="map_origin">[37.560991036666664, 126.93699022999999, 28.1200008392334]</rosparam>
-    </node>    
-    
-    <!--- Publish fake gps Coordinate -->
-    <node pkg="rostopic" type="rostopic" name="fake_gps_map" args="pub /gps/map sensor_msgs/NavSatFix
-    '{header: {frame_id: map}, latitude: 37.560991036666664, longitude: 126.93699022999999, altitude: 28.1200008392334}'" />
-    
+    <node pkg="$(arg project)" type="initial_pose" name="initial_pose" output="screen" respawn="true" />
 </launch>

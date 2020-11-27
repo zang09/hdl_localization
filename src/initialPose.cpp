@@ -15,9 +15,11 @@
 #include <nav_msgs/Odometry.h>
 #include <novatel_gps_msgs/NovatelPosition.h>
 #include <novatel_gps_msgs/NovatelUtmPosition.h>
-#include <hdl_localization/initGPS.h>
+#include <robot_localization/navsat_conversions.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include <../include/hdl_localization/utm.h>
+#include <hdl_localization/initGPS.h>
 
 using namespace hdl_localization;
 
@@ -27,6 +29,7 @@ public:
     ros::Subscriber subGlobalMap_;
     ros::Subscriber subCorrectIMU_;
     ros::Subscriber subGPS_;
+    ros::Subscriber subMapLLA_;
     ros::Subscriber subBestUtm_;
 
     ros::Publisher  pubInitialPose_;
@@ -36,8 +39,10 @@ public:
     ros::ServiceServer getInitGPSServiceServer_;
 
     pcl::PointCloud<pcl::PointXYZI>::Ptr globalMap_;
+
     geometry_msgs::Quaternion robotOrientation_;
     geometry_msgs::Quaternion imuOrientation_;
+    nav_msgs::Odometry gps_odom_;
 
     initGPSRequest initRequest_;
     initGPSResponse initResponse_;
@@ -47,11 +52,13 @@ public:
     bool   useGPS_;
     double mapX_;
     double mapY_;
+    double mapZ_;
     double robotPosX_;
     double robotPosY_;
     double robotPosZ_;
     double preRobotPosX_;
     double preRobotPosY_;
+    double utm_meridian_convergence_;
 
     initialPose(ros::NodeHandle nh, ros::NodeHandle priv_nh) :
         gpsCnt_(0),
@@ -59,6 +66,7 @@ public:
         useGPS_(false),
         mapX_(0.0),
         mapY_(0.0),
+        mapZ_(0.0),
         robotPosX_(0.0),
         robotPosY_(0.0),
         robotPosZ_(0.0),
@@ -67,26 +75,34 @@ public:
     {
         subGlobalMap_     = nh.subscribe("globalmap", 1, &initialPose::globalmapHandler, this);
         subGPS_           = nh.subscribe<sensor_msgs::NavSatFix>("pwk7/gps/fix", 200, &initialPose::gpsHandler, this, ros::TransportHints().tcpNoDelay());
+        subMapLLA_        = nh.subscribe<sensor_msgs::NavSatFix>("map/gps/origin", 5, &initialPose::mapOriginHandler, this);
         subCorrectIMU_    = nh.subscribe<sensor_msgs::Imu>("correct_imu", 200, &initialPose::imuHandler, this, ros::TransportHints().tcpNoDelay());
+
         pubInitialPose_   = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
         pubFilteredCloud_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 5, true); //test
-        pubGPSPos_        = nh.advertise<nav_msgs::Odometry>("gps_test_odom", 10);
+        pubGPSPos_        = nh.advertise<nav_msgs::Odometry>("gps/odom", 10);
+
         getInitGPSServiceServer_ = nh.advertiseService("local/gps", &initialPose::getInitGPSService, this);
 
-        if (priv_nh.hasParam("map_origin"))
+        /*
+        if (priv_nh.hasParam("map_lla"))
         {
             XmlRpc::XmlRpcValue mapConfig;
 
             try
             {
-                priv_nh.getParam("map_origin", mapConfig);
+                priv_nh.getParam("map_lla", mapConfig);
                 ROS_INFO("\033[1;32m----> Get map origin(initialpose).\033[0m");
 
-                int zone = 52;
                 double lat = mapConfig[0];
                 double lon = mapConfig[1];
+                double alt = mapConfig[2];
 
-                Utm::LatLonToUTMXY(lat, lon, zone, mapX_, mapY_);
+                std::string utm_zone_tmp;
+                RobotLocalization::NavsatConversions::LLtoUTM(lat, lon, mapY_, mapX_, utm_zone_tmp, utm_meridian_convergence_);
+                utm_meridian_convergence_ = DEG2RAD(utm_meridian_convergence_);
+
+                mapZ_ = alt;
             }
             catch (XmlRpc::XmlRpcException &e)
             {
@@ -94,6 +110,7 @@ public:
                                  " for process_noise_covariance (type: " << mapConfig.getType() << ")");
             }
         }
+        */
     }
 
     void globalmapHandler(const sensor_msgs::PointCloud2ConstPtr& pointsMsg) {
@@ -108,9 +125,10 @@ public:
     {
         double lat = gpsMsg->latitude;
         double lon = gpsMsg->longitude;
+        robotPosZ_ = gpsMsg->altitude;
 
-        int zone = 52;
-        Utm::LatLonToUTMXY(lat, lon, zone, robotPosX_, robotPosY_);
+        std::string utm_zone_tmp;
+        RobotLocalization::NavsatConversions::LLtoUTM(lat, lon, robotPosY_, robotPosX_, utm_zone_tmp);
 
         double dX = robotPosX_ - preRobotPosX_;
         double dY = robotPosY_ - preRobotPosY_;
@@ -119,27 +137,35 @@ public:
 
         if(distance > 0.1 && distance < 10.0)
         {
-            tf::Quaternion q = tf::createQuaternionFromRPY(0.0, 0.0, atan2(dY, dX));
-            robotOrientation_.w = q.w();
-            robotOrientation_.x = q.x();
-            robotOrientation_.y = q.y();
-            robotOrientation_.z = q.z();
+            tf2::Transform latest_utm_pose;
+            latest_utm_pose.setOrigin(tf2::Vector3(robotPosX_-mapX_, robotPosY_-mapY_, robotPosZ_-mapZ_));
 
-            nav_msgs::Odometry odom;
-            odom.header.stamp = ros::Time::now();
-            odom.header.frame_id = "map";
+            tf2::Quaternion odom_quat;
+            odom_quat.setRPY(0.0, 0.0, atan2(dY, dX));
+            robotOrientation_ = tf2::toMsg(odom_quat);
 
-            odom.pose.pose.position.x = robotPosX_ - mapX_;
-            odom.pose.pose.position.y = robotPosY_ - mapY_;
-            odom.pose.pose.position.z = 0.0;
-            odom.pose.pose.orientation = robotOrientation_;
+            gps_odom_ = cartesianToMap(latest_utm_pose);
+            gps_odom_.pose.pose.orientation = robotOrientation_;
 
             initFlag_ = true;
-            pubGPSPos_.publish(odom);
+            pubGPSPos_.publish(gps_odom_);
         }
 
         preRobotPosX_ = robotPosX_;
         preRobotPosY_ = robotPosY_;
+    }
+
+    void mapOriginHandler(const sensor_msgs::NavSatFix::ConstPtr &originMsg)
+    {
+        double lat = originMsg->latitude;
+        double lon = originMsg->longitude;
+        double alt = originMsg->altitude;
+
+        std::string utm_zone_tmp;
+        RobotLocalization::NavsatConversions::LLtoUTM(lat, lon, mapY_, mapX_, utm_zone_tmp, utm_meridian_convergence_);
+        utm_meridian_convergence_ = DEG2RAD(utm_meridian_convergence_);
+
+        mapZ_ = alt;
     }
 
     void imuHandler(const sensor_msgs::Imu::ConstPtr &imuMsg)
@@ -155,27 +181,21 @@ public:
 
         if(useGPS_)
         {
-            if((mapX_ == 0.) && (mapY_ == 0.))
-            {
-                int zone = 52;
-                Utm::LatLonToUTMXY(mapLat, mapLon, zone, mapX_, mapY_);
-            }
-
             if(initFlag_)
             {
                 geometry_msgs::PoseWithCovarianceStamped poseMsg;
 
-                double tempX = robotPosX_ - mapX_;
-                double tempY = robotPosY_ - mapY_;
-                double currentZ = 0;
+                double curX = gps_odom_.pose.pose.position.x;
+                double curY = gps_odom_.pose.pose.position.y;
+                double curZ;
 
-                getHeightFromCloud(tempX, tempY, currentZ);
+                getHeightFromCloud(curX, curY, curZ);
 
                 poseMsg.header.stamp = ros::Time::now();
                 poseMsg.header.frame_id = "map";
-                poseMsg.pose.pose.position.x = robotPosX_ - mapX_;
-                poseMsg.pose.pose.position.y = robotPosY_ - mapY_;
-                poseMsg.pose.pose.position.z = currentZ;
+                poseMsg.pose.pose.position.x = curX;
+                poseMsg.pose.pose.position.y = curY;
+                poseMsg.pose.pose.position.z = curZ;
                 poseMsg.pose.pose.orientation = robotOrientation_;
 
                 pubInitialPose_.publish(poseMsg);
@@ -246,7 +266,7 @@ public:
         }
         averageZ = sumZ/cloudFiltered->size();
 
-        std::cout << "diff: " << maxZ-minZ << std::endl;
+        //std::cout << "diff: " << maxZ-minZ << std::endl;
         if(maxZ - minZ > 5.0)
             z = minZ;
         else
@@ -255,11 +275,30 @@ public:
         pubFilteredCloud_.publish(cloudFiltered);
     }
 
+    nav_msgs::Odometry cartesianToMap(const tf2::Transform& cartesian_pose)
+    {
+        tf2::Transform transformed_cartesian_gps;
+        tf2::Transform cartesian_world_transform;
+        tf2::Quaternion yaw_difference;
+
+        yaw_difference.setRPY(0.0, 0.0, utm_meridian_convergence_);
+        cartesian_world_transform.setOrigin(tf2::Vector3(0, 0, 0));
+        cartesian_world_transform.setRotation(yaw_difference);
+
+        transformed_cartesian_gps.mult(cartesian_world_transform.inverse(), cartesian_pose);
+
+        nav_msgs::Odometry gps_odom;
+        gps_odom.header.frame_id = "map";
+        gps_odom.header.stamp = ros::Time::now();
+        tf2::toMsg(transformed_cartesian_gps, gps_odom.pose.pose);
+
+        return gps_odom;
+    }
 };
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "pubInitialPose");
+    ros::init(argc, argv, "initial_pose");
 
     ros::NodeHandle nh_;
     ros::NodeHandle private_nh_("~");
