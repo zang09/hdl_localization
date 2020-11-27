@@ -55,6 +55,8 @@ private:
   {
       if(private_nh.hasParam("/hdl_localization/latitude"))
       {
+        utm_convert = true;
+
         private_nh.param<double>("/hdl_localization/latitude", gpsOrigin.latitude, double());
         private_nh.param<double>("/hdl_localization/longitude", gpsOrigin.longitude, double());
         private_nh.param<double>("/hdl_localization/altitude", gpsOrigin.altitude, double());
@@ -75,6 +77,8 @@ private:
     // shift to local coordinate
     for(size_t i=0; i<globalmap->size(); i++)
     {
+        if(!utm_convert) break;
+
         globalmap->points[i].x -= gpsUTMOrigin.latitude;
         globalmap->points[i].y -= gpsUTMOrigin.longitude;
         globalmap->points[i].z -= gpsUTMOrigin.altitude;
@@ -112,6 +116,8 @@ private:
 
   geographic_msgs::GeoPoint gpsOrigin{};
   geographic_msgs::GeoPoint gpsUTMOrigin{};
+
+  bool utm_convert = false;
 };
 
 }

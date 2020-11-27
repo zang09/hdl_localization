@@ -1,9 +1,0 @@
-hdl_localization:
-  # Extrinsics (lidar -> IMU)
-  extrinsicTrans: [0.0, 0.0, 0.0]
-  extrinsicRot: [0, 1, 0,
-                 -1, 0, 0,
-                 0, 0, 1]
-  extrinsicRPY: [0, -1, 0,
-                 1, 0, 0,
-                 0, 0, 1]
