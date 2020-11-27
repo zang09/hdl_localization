@@ -1,4 +1,5 @@
 hdl_localization:
+  use_gps_map: false
   # Extrinsics (lidar -> IMU)
   extrinsicTrans: [0.0, 0.0, 0.0]
   extrinsicRot: [0, 1, 0,

@@ -33,7 +33,7 @@
 
     <!-- globalmap_server_nodelet -->
     <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)">
-        <param name="globalmap_pcd" value="$(find hdl_localization)/data/GlobalMap.pcd" />
+        <param name="globalmap_pcd" value="$(find hdl_localization)/data/yonsei_full_map.pcd" />
         <param name="downsample_resolution" value="0.5" />
     </node>
 

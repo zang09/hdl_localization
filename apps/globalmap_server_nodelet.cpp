@@ -53,6 +53,8 @@ public:
 private:
   void get_params()
   {
+      private_nh.param<bool>("/hdl_localization/use_gps_map", use_gps_map, bool());
+
       if(private_nh.hasParam("/hdl_localization/latitude"))
       {
         utm_convert = true;
@@ -77,7 +79,7 @@ private:
     // shift to local coordinate
     for(size_t i=0; i<globalmap->size(); i++)
     {
-        if(!utm_convert) break;
+        if(!utm_convert || !use_gps_map) break;
 
         globalmap->points[i].x -= gpsUTMOrigin.latitude;
         globalmap->points[i].y -= gpsUTMOrigin.longitude;
@@ -118,6 +120,7 @@ private:
   geographic_msgs::GeoPoint gpsUTMOrigin{};
 
   bool utm_convert = false;
+  bool use_gps_map = false;
 };
 
 }
