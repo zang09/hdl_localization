@@ -71,7 +71,9 @@ private:
   void initialize_params()
   {
     // read globalmap from a pcd file
-    std::string globalmap_pcd = private_nh.param<std::string>("globalmap_pcd", "");
+    std::string globalmap_pcd = std::getenv("HOME") + private_nh.param<std::string>("globalmap_pcd", "");
+    ROS_INFO("Map file: %s", globalmap_pcd.c_str());
+
     globalmap.reset(new pcl::PointCloud<PointT>());
     pcl::io::loadPCDFile(globalmap_pcd, *globalmap);
     globalmap->header.frame_id = "map";

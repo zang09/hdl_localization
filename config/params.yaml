@@ -1,0 +1,41 @@
+hdl_localization:
+  use_gps_map: false
+  
+  # Extrinsics (lidar -> IMU)
+  extrinsicTrans: [0.0, 0.0, 0.0]
+  extrinsicRot: [0, 1, 0,
+                 -1, 0, 0,
+                 0, 0, 1]
+  extrinsicRPY: [0, -1, 0,
+                 1, 0, 0,
+                 0, 0, 1]
+
+hdl_localization_nodelet: 
+  # Topic name
+  imu_topic: mti30/imu/data
+  points_topic: velodyne_points
+  
+  # IMU settings
+  use_imu: true
+  invert_imu: false
+  cool_time_duration: 2.0               # during "cool_time", imu inputs are ignored
+            
+  # NDT settings  
+  ndt_neighbot_search_method: DIRECT7   # if NDT is slow for your PC, try DIRECT1 serach method
+  ndt_resolution: 1.0
+  downsample_resolution: 0.1
+  
+  # Specift init pose
+  specify_init_pose: false
+  init_pos_x: 0.0
+  init_pos_y: 0.0
+  init_pos_z: 0.0
+  init_ori_w: 1.0
+  init_ori_x: 0.0
+  init_ori_y: 0.0
+  init_ori_z: 0.0
+
+globalmap_server_nodelet:
+  globalmap_pcd: /slam_ws/src/hdl_localization/data/yonsei_full_map.pcd
+  downsample_resolution: 0.5
+  

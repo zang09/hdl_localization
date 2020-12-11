@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="project" default="hdl_localization"/>
+
+  <!--- Sim Time -->
+  <param name="use_sim_time" value="false" />
+  
+  <!--- Call urdf robot model -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find hdl_localization)/config/urdf/argos_mr.urdf.xacro'"/>
+  
+  <!-- Combine joint/link values to TF-->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  
+  <!--- Image transparent -->
+  <node pkg="image_transport" type="republish" name="republish" args="compressed in:=/usb_cam/image_raw raw out:=/usb_cam/image_raw_down" output="screen"/>
+
+  <!--- Run Logo-->
+  <node pkg="image_publisher" type="image_publisher" name="image_publisher"
+        args="$(find hdl_localization)/config/images/stryx_logo.png">
+    <param name="flip_horizontal" value="false" />
+    <param name="flip_vertical" value="false" />
+    <param name="publish_rate" value="1" />
+  </node>
+
+  <!--- Run Rviz-->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find hdl_localization)/rviz/stryx_viewer.rviz" />
+  
+  <!-- Parameters -->
+  <rosparam file="$(find hdl_localization)/config/map_coordinate.yaml" command="load" /> 
+  <rosparam file="$(find hdl_localization)/config/params.yaml" command="load" /> 
+    
+  <!-- arguments -->
+  <arg name="nodelet_manager" default="standalone_nodelet" />
+  <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
+
+  <!-- globalmap_server_nodelet -->
+  <node pkg="nodelet" type="nodelet" name="globalmap_server_nodelet" args="load hdl_localization/GlobalmapServerNodelet $(arg nodelet_manager)" />
+
+  <!-- hdl_localization_nodelet -->
+  <node pkg="nodelet" type="nodelet" name="hdl_localization_nodelet" args="load hdl_localization/HdlLocalizationNodelet $(arg nodelet_manager)" />
+    
+  <!--- Initial Pose Node -->
+  <node pkg="$(arg project)" type="initial_pose" name="initial_pose" output="screen" respawn="true" />
+   
+  <!--- Start UI Node -->
+  <node pkg="localization_ui" type="localization_ui" name="localization_ui" respawn="false" />
+
+</launch>

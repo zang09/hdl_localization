@@ -47,13 +47,16 @@ public:
     processing_time.resize(16);
     initialize_params();
 
-    use_imu = private_nh.param<bool>("use_imu", true);
-    invert_imu = private_nh.param<bool>("invert_imu", false);
+    use_imu      = private_nh.param<bool>("use_imu", true);
+    invert_imu   = private_nh.param<bool>("invert_imu", false);
+    imu_topic    = private_nh.param<std::string>("imu_topic", "/gpsimu_driver/imu_data");
+    points_topic = private_nh.param<std::string>("points_topic", "/velodyne_points");
+
     if(use_imu) {
       NODELET_INFO("\033[0;33m----> enable imu-based prediction\033[0m");
-      imu_sub = mt_nh.subscribe("/gpsimu_driver/imu_data", 256, &HdlLocalizationNodelet::imu_callback, this);
+      imu_sub = mt_nh.subscribe(imu_topic, 256, &HdlLocalizationNodelet::imu_callback, this);
     }
-    points_sub      = mt_nh.subscribe("/velodyne_points", 5, &HdlLocalizationNodelet::points_callback, this);
+    points_sub      = mt_nh.subscribe(points_topic, 5, &HdlLocalizationNodelet::points_callback, this);
     globalmap_sub   = nh.subscribe("/globalmap", 1, &HdlLocalizationNodelet::globalmap_callback, this);
     initialpose_sub = nh.subscribe("/initialpose", 8, &HdlLocalizationNodelet::initialpose_callback, this);
 
@@ -64,7 +67,7 @@ public:
   }
 
 private:
-  void initialize_params() {
+  void initialize_params() {    
     // initialize scan matching method
     double downsample_resolution = private_nh.param<double>("downsample_resolution", 0.1);
     std::string ndt_neighbor_search_method = private_nh.param<std::string>("ndt_neighbor_search_method", "DIRECT7");
@@ -401,6 +404,9 @@ private:
 
   bool use_imu;
   bool invert_imu;
+  std::string imu_topic;
+  std::string points_topic;
+
   ros::Subscriber imu_sub;
   ros::Subscriber points_sub;
   ros::Subscriber globalmap_sub;
