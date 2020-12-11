@@ -2,9 +2,16 @@
 
 <launch>
   <arg name="project" default="hdl_localization"/>
-  
+
   <!--- Sim Time -->
   <param name="use_sim_time" value="false" />
+  
+  <!--- Call urdf robot model -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find hdl_localization)/config/urdf/argos_mr.urdf.xacro'"/>
+  
+  <!-- Combine joint/link values to TF-->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
   
   <!--- Image transparent -->
   <node pkg="image_transport" type="republish" name="republish" args="compressed in:=/usb_cam/image_raw raw out:=/usb_cam/image_raw_down" output="screen"/>

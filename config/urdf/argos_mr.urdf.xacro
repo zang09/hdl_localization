@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<robot name="argos_mr" xmlns:xacro="http://ros.org/wiki/xacro">
+  
+  <xacro:include filename="$(find hdl_localization)/config/urdf/materials.xacro" />
+    
+  <link name="base_link">
+  </link>
+  
+  <joint name="base_link_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="link1"/>
+  </joint>
+  
+  <link name="link1">
+    <visual>
+      <origin xyz="0 0 -0.6" rpy="1.57 0.0 -1.57"/>
+      <geometry>
+        <mesh filename="package://hdl_localization/config/meshes/mr_v3.stl" scale="0.002 0.002 0.002"/>
+      </geometry>
+      <material name="silver"/>
+    </visual>
+  </link>  
+    
+  <joint name="link1_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="link1"/>
+    <child link="link2"/>
+  </joint>
+  
+  <link name="link2">
+    <visual>
+      <origin xyz="0 0 0.15" rpy="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="1.5 0.9 0.8"/>           
+      </geometry>
+      <material name="grey"/>
+    </visual>
+  </link>  
+  
+  
+</robot>

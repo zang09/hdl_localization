@@ -1,7 +1,15 @@
 <?xml version="1.0"?>
 
 <launch>
-  <arg name="project" default="hdl_localization"/>
+  <arg name="project" default="hdl_localization"/>  
+  <arg name="model" default="$(find hdl_localization)/config/urdf/argos_mr.urdf" />
+  
+  <!--- Call urdf robot model -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find hdl_localization)/config/urdf/argos_mr.urdf.xacro'"/>
+  
+  <!-- Combine joint/link values to TF-->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
   
   <!--- Sim Time -->
   <param name="use_sim_time" value="false" />
