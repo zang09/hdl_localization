@@ -37,5 +37,5 @@ hdl_localization_nodelet:
 
 globalmap_server_nodelet:
   globalmap_pcd: /slam_ws/src/hdl_localization/data/yonsei_full_map.pcd
-  downsample_resolution: 0.5
+  downsample_resolution: 0.4
   

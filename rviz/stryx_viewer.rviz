@@ -4,9 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /RobotModel1/Links1/base_link1/Position1
-        - /RobotModel1/Links1/base_link1/Orientation1
+        - /GPS odom1/Status1
         - /GPS odom1/Shape1
+        - /Reference Angle1/Shape1
       Splitter Ratio: 0.6441176533699036
     Tree Height: 476
   - Class: rviz/Selection
@@ -267,23 +267,23 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: false
-      Keep: 3000
+      Enabled: true
+      Keep: 1000
       Name: GPS odom
       Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
         Axes Length: 0.10000000149011612
         Axes Radius: 0.10000000149011612
-        Color: 255; 25; 0
-        Head Length: 1
-        Head Radius: 1
-        Shaft Length: 1
-        Shaft Radius: 0.05000000074505806
-        Value: Axes
+        Color: 239; 41; 41
+        Head Length: 0.10000000149011612
+        Head Radius: 0.10000000149011612
+        Shaft Length: 0
+        Shaft Radius: 0
+        Value: Arrow
       Topic: /gps/odom
       Unreliable: false
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz/Odometry
       Covariance:
@@ -318,16 +318,6 @@ Visualization Manager:
       Topic: /odom
       Unreliable: false
       Value: false
-    - Alpha: 0.699999988079071
-      Blocks: 5
-      Class: rviz_plugins/AerialMapDisplay
-      Draw Behind: true
-      Enabled: false
-      Name: AerialMapDisplay
-      Object URI: https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}
-      Topic: /map/gps/origin
-      Value: false
-      Zoom: 18
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /flag/line
@@ -344,6 +334,50 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Keep: 1
+      Name: Reference Angle
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 1
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 255; 25; 0
+        Head Length: 0.20000000298023224
+        Head Radius: 0.30000001192092896
+        Shaft Length: 1.5
+        Shaft Radius: 0.15000000596046448
+        Value: Arrow
+      Topic: /reference/angle
+      Unreliable: false
+      Value: true
+    - Alpha: 0.699999988079071
+      Blocks: 5
+      Class: rviz_plugins/AerialMapDisplay
+      Draw Behind: true
+      Enabled: false
+      Name: AerialMapDisplay
+      Object URI: https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}
+      Topic: /map/gps/origin
+      Value: false
+      Zoom: 18
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -373,16 +407,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 53.56521987915039
+      Distance: 103.67976379394531
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.015051238238811493
-        Y: -0.2641652524471283
-        Z: 0.2210424691438675
+        X: -0.18661175668239594
+        Y: 3.863234043121338
+        Z: -0.5517785549163818
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -391,7 +425,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 4.453154563903809
+      Yaw: 4.4331817626953125
     Saved: ~
 Window Geometry:
   Camera:

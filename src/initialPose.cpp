@@ -130,15 +130,18 @@ public:
         std::string utm_zone_tmp;
         RobotLocalization::NavsatConversions::LLtoUTM(lat, lon, robotPosY_, robotPosX_, utm_zone_tmp);
 
+        robotPosX_ -= mapX_;
+        robotPosY_ -= mapY_;
+        robotPosZ_ -= mapZ_;
+
         double dX = robotPosX_ - preRobotPosX_;
         double dY = robotPosY_ - preRobotPosY_;
-
         double distance = sqrt(pow(dX,2)+pow(dY,2));
 
         if(distance > 0.1 && distance < 10.0)
         {
             tf2::Transform latest_utm_pose;
-            latest_utm_pose.setOrigin(tf2::Vector3(robotPosX_-mapX_, robotPosY_-mapY_, robotPosZ_-mapZ_));
+            latest_utm_pose.setOrigin(tf2::Vector3(robotPosX_, robotPosY_, robotPosZ_));
 
             tf2::Quaternion odom_quat;
             odom_quat.setRPY(0.0, 0.0, atan2(dY, dX));
@@ -149,10 +152,20 @@ public:
 
             initFlag_ = true;
             pubGPSPos_.publish(gps_odom_);
+
+            preRobotPosX_ = robotPosX_;
+            preRobotPosY_ = robotPosY_;
+        }
+        else
+        {
+          initFlag_ = false;
         }
 
-        preRobotPosX_ = robotPosX_;
-        preRobotPosY_ = robotPosY_;
+        if(!initFlag_)
+        {
+          preRobotPosX_ = robotPosX_;
+          preRobotPosY_ = robotPosY_;
+        }
     }
 
     void mapOriginHandler(const sensor_msgs::NavSatFix::ConstPtr &originMsg)
@@ -244,11 +257,11 @@ public:
         pcl::SACSegmentation<pcl::PointXYZI> seg;
         seg.setOptimizeCoefficients(true);          //(옵션) // Enable model coefficient refinement (optional).
         seg.setInputCloud(cloudFiltered);           //입력
-        seg.setModelType(pcl::SACMODEL_PLANE);      //적용 모델  // Configure the object to look for a plane.
+        seg.setModelType(pcl::SACMODEL_PLANE);      //적용 모델   // Configure the object to look for a plane.
         seg.setMethodType(pcl::SAC_RANSAC);         //적용 방법   // Use RANSAC method.
         seg.setMaxIterations(1000);                 //최대 실행 수
         seg.setDistanceThreshold(0.2);              //inlier로 처리할 거리 정보   // Set the maximum allowed distance to the model.
-        seg.segment (*inliers, *coefficients);      //세그멘테이션 적용
+        seg.segment(*inliers, *coefficients);      //세그멘테이션 적용
 
         pcl::copyPointCloud<pcl::PointXYZI>(*cloudFiltered, *inliers, *cloudFiltered);
 
