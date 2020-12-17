@@ -57,13 +57,13 @@ public:
       imu_sub = mt_nh.subscribe(imu_topic, 256, &HdlLocalizationNodelet::imu_callback, this);
     }
     points_sub      = mt_nh.subscribe(points_topic, 5, &HdlLocalizationNodelet::points_callback, this);
-    globalmap_sub   = nh.subscribe("/globalmap", 1, &HdlLocalizationNodelet::globalmap_callback, this);
+    globalmap_sub   = nh.subscribe("hdl_localization/globalmap", 1, &HdlLocalizationNodelet::globalmap_callback, this);
     initialpose_sub = nh.subscribe("/initialpose", 8, &HdlLocalizationNodelet::initialpose_callback, this);
 
-    pose_pub       = nh.advertise<nav_msgs::Odometry>("/odom", 5, false);
-    alignState_pub = nh.advertise<std_msgs::Bool>("/align_state", 1, true);
-    aligned_pub    = nh.advertise<sensor_msgs::PointCloud2>("/aligned_points", 5, false);
-    correctImu_pub = nh.advertise<sensor_msgs::Imu>("/imu_correct", 5, false);
+    pose_pub       = nh.advertise<nav_msgs::Odometry>("hdl_localization/odom", 5, false);
+    alignState_pub = nh.advertise<std_msgs::Bool>("hdl_localization/align_state", 1, true);
+    aligned_pub    = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/aligned_points", 5, false);
+    correctImu_pub = nh.advertise<sensor_msgs::Imu>("hdl_localization/imu_correct", 5, false);
   }
 
 private:

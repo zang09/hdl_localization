@@ -73,16 +73,16 @@ public:
         preRobotPosX_(0.0),
         preRobotPosY_(0.0)
     {
-        subGlobalMap_     = nh.subscribe("globalmap", 1, &initialPose::globalmapHandler, this);
+        subGlobalMap_     = nh.subscribe("hdl_localization/globalmap", 1, &initialPose::globalmapHandler, this);
         subGPS_           = nh.subscribe<sensor_msgs::NavSatFix>("pwk7/gps/fix", 200, &initialPose::gpsHandler, this, ros::TransportHints().tcpNoDelay());
-        subMapLLA_        = nh.subscribe<sensor_msgs::NavSatFix>("map/gps/origin", 5, &initialPose::mapOriginHandler, this);
-        subCorrectIMU_    = nh.subscribe<sensor_msgs::Imu>("correct_imu", 200, &initialPose::imuHandler, this, ros::TransportHints().tcpNoDelay());
+        subMapLLA_        = nh.subscribe<sensor_msgs::NavSatFix>("hdl_localization/gloablmap/origin", 5, &initialPose::mapOriginHandler, this);
+        subCorrectIMU_    = nh.subscribe<sensor_msgs::Imu>("hdl_localization/correct_imu", 200, &initialPose::imuHandler, this, ros::TransportHints().tcpNoDelay());
 
-        pubInitialPose_   = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
-        pubFilteredCloud_ = nh.advertise<sensor_msgs::PointCloud2>("filtered_cloud", 5, true); //test
-        pubGPSPos_        = nh.advertise<nav_msgs::Odometry>("gps/odom", 10);
+        pubInitialPose_   = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1);
+        pubFilteredCloud_ = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/filtered_cloud", 5, true); //test
+        pubGPSPos_        = nh.advertise<nav_msgs::Odometry>("hdl_localization/gps_odom", 10);
 
-        getInitGPSServiceServer_ = nh.advertiseService("local/gps", &initialPose::getInitGPSService, this);
+        getInitGPSServiceServer_ = nh.advertiseService("hdl_localization/init_gps", &initialPose::getInitGPSService, this);
 
         /*
         if (priv_nh.hasParam("map_lla"))

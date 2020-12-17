@@ -43,10 +43,10 @@ public:
     initialize_params();
 
     // publish globalmap with "latched" publisher
-    map_lla_pub = nh.advertise<sensor_msgs::NavSatFix>("/map/gps/origin", 5, true);
+    map_lla_pub = nh.advertise<sensor_msgs::NavSatFix>("hdl_localization/gloablmap/origin", 5, true);
     map_lla_pub.publish(map_origin);
 
-    globalmap_pub = nh.advertise<sensor_msgs::PointCloud2>("/globalmap", 5, true);
+    globalmap_pub = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/globalmap", 5, true);
     globalmap_pub.publish(globalmap);
   }
 
