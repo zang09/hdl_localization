@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <mutex>
 #include <memory>
 
@@ -13,6 +14,7 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geographic_msgs/GeoPoint.h>
+#include <visualization_msgs/Marker.h>
 
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
@@ -48,24 +50,27 @@ public:
 
     globalmap_pub = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/globalmap", 5, true);
     globalmap_pub.publish(globalmap);
+
+    globalmap_csv_pub = nh.advertise<visualization_msgs::Marker>("hdl_localization/globalmap/trajectory", 1, true);
+    globalmap_csv_pub.publish(line_strip);
   }
 
 private:
   void get_params()
   {
-      private_nh.param<bool>("/hdl_localization/use_gps_map", use_gps_map, bool());
+    private_nh.param<bool>("/globalmap_server_nodelet/use_gps_map", use_gps_map, bool());
 
-      if(private_nh.hasParam("/hdl_localization/latitude"))
-      {
-        utm_convert = true;
+    if(private_nh.hasParam("/globalmap_server_nodelet/latitude"))
+    {
+      utm_convert = true;
 
-        private_nh.param<double>("/hdl_localization/latitude", gpsOrigin.latitude, double());
-        private_nh.param<double>("/hdl_localization/longitude", gpsOrigin.longitude, double());
-        private_nh.param<double>("/hdl_localization/altitude", gpsOrigin.altitude, double());
-        private_nh.param<double>("/hdl_localization/easting", gpsUTMOrigin.latitude, double());
-        private_nh.param<double>("/hdl_localization/northing", gpsUTMOrigin.longitude, double());
-        private_nh.param<double>("/hdl_localization/height", gpsUTMOrigin.altitude, double());
-      }
+      private_nh.param<double>("/globalmap_server_nodelet/latitude", gpsOrigin.latitude, double());
+      private_nh.param<double>("/globalmap_server_nodelet/longitude", gpsOrigin.longitude, double());
+      private_nh.param<double>("/globalmap_server_nodelet/altitude", gpsOrigin.altitude, double());
+      private_nh.param<double>("/globalmap_server_nodelet/easting", gpsUTMOrigin.latitude, double());
+      private_nh.param<double>("/globalmap_server_nodelet/northing", gpsUTMOrigin.longitude, double());
+      private_nh.param<double>("/globalmap_server_nodelet/height", gpsUTMOrigin.altitude, double());
+    }
   }
 
   void initialize_params()
@@ -81,11 +86,11 @@ private:
     // shift to local coordinate
     for(size_t i=0; i<globalmap->size(); i++)
     {
-        if(!utm_convert || !use_gps_map) break;
+      if(!utm_convert || !use_gps_map) break;
 
-        globalmap->points[i].x -= gpsUTMOrigin.latitude;
-        globalmap->points[i].y -= gpsUTMOrigin.longitude;
-        globalmap->points[i].z -= gpsUTMOrigin.altitude;
+      globalmap->points[i].x -= gpsUTMOrigin.latitude;
+      globalmap->points[i].y -= gpsUTMOrigin.longitude;
+      globalmap->points[i].z -= gpsUTMOrigin.altitude;
     }
 
     // downsample globalmap
@@ -104,6 +109,53 @@ private:
     map_origin.latitude = gpsOrigin.latitude;
     map_origin.longitude = gpsOrigin.longitude;
     map_origin.altitude = gpsOrigin.altitude;
+
+    //read trajectory from a csv
+    std::string globalmap_csv = std::getenv("HOME") + private_nh.param<std::string>("globalmap_csv", "");
+
+    std::ifstream read_file;
+    read_file.open(globalmap_csv.c_str());
+
+    line_strip.header.frame_id = "map";
+    line_strip.type = visualization_msgs::Marker::LINE_STRIP;
+    line_strip.action = visualization_msgs::Marker::ADD;
+    line_strip.scale.x = 0.3;
+    line_strip.color.a = line_strip.color.r = line_strip.color.b = 1.0;
+    line_strip.pose.orientation.w = 1.0;
+
+    if(read_file.is_open())
+    {
+      ROS_INFO("Trajectory file: %s", globalmap_csv.c_str());
+
+      geometry_msgs::Point p;
+      int read_cnt = 0;
+
+      while(!read_file.eof())
+      {
+        double x, y, z;
+        char buf[1024];
+
+        read_file.getline(buf, 1024);
+        read_cnt++;
+
+        if (read_file.fail()) break;
+        if (read_cnt==1) continue;
+
+        sscanf(buf, "%lf,%lf,%lf", &x,&y,&z);
+
+        if(read_cnt==2) {
+          p.x=x; p.y=y; p.z=z;
+          continue;
+        }
+        else {
+          line_strip.points.push_back(p);
+          p.x=x; p.y=y; p.z=z;
+          line_strip.points.push_back(p);
+        }
+      }
+
+      read_file.close();
+    }
   }
 
 private:
@@ -113,6 +165,7 @@ private:
   ros::NodeHandle private_nh;
 
   ros::Publisher globalmap_pub;
+  ros::Publisher globalmap_csv_pub;
   ros::Publisher map_lla_pub;
 
   pcl::PointCloud<PointT>::Ptr globalmap;
@@ -120,6 +173,8 @@ private:
 
   geographic_msgs::GeoPoint gpsOrigin{};
   geographic_msgs::GeoPoint gpsUTMOrigin{};
+
+  visualization_msgs::Marker line_strip;
 
   bool utm_convert = false;
   bool use_gps_map = false;

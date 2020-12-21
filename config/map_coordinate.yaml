@@ -1,4 +1,4 @@
-hdl_localization:
+globalmap_server_nodelet:
   latitude: 37.56099117
   longitude: 126.936990235
   altitude: 28.13999938964844
