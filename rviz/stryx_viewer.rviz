@@ -173,7 +173,7 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
-    - Alpha: 0.699999988079071
+    - Alpha: 0.20000000298023224
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -196,7 +196,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.10000000149011612
+      Size (m): 0.20000000298023224
       Style: Flat Squares
       Topic: /hdl_localization/aligned_points
       Unreliable: false
@@ -330,7 +330,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/flag_line
       Name: Waypoint Line
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -338,7 +338,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/robot/virtual_point
       Name: Virtual Point
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -380,7 +380,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/object/centroid_point
       Name: Object
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -405,7 +405,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 5
+      Size (Pixels): 10
       Size (m): 0.5
       Style: Points
       Topic: /waypoint_driving/clustered_cloud
@@ -452,16 +452,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 245.5490264892578
+      Distance: 77.3653793334961
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 6.303706169128418
-        Y: 18.429054260253906
-        Z: 26.50048828125
+        X: -1.204973816871643
+        Y: 7.716558933258057
+        Z: -2.5625126361846924
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -470,7 +470,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 4.468184947967529
+      Yaw: 4.448184490203857
     Saved: ~
 Window Geometry:
   Camera:
