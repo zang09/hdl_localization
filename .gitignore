@@ -1,3 +1,4 @@
 data/*.pcd
 data/*.csv
 config/map_coordinate.yaml
+config/coordinate
