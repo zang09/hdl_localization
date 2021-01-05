@@ -20,6 +20,7 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/extract_indices.h>
 
 #include <pclomp/ndt_omp.h>
 #include <pclomp/gicp_omp.h>
@@ -63,11 +64,12 @@ public:
     pose_pub       = nh.advertise<nav_msgs::Odometry>("hdl_localization/odom", 5, false);
     alignState_pub = nh.advertise<std_msgs::Bool>("hdl_localization/align_state", 1, true);
     aligned_pub    = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/aligned_points", 5, false);
+    velodyne_pub   = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/velodyne_points", 5, false);
     correctImu_pub = nh.advertise<sensor_msgs::Imu>("hdl_localization/imu_correct", 5, false);
   }
 
 private:
-  void initialize_params() {    
+  void initialize_params() {
     // initialize scan matching method
     double downsample_resolution = private_nh.param<double>("downsample_resolution", 0.1);
     std::string ndt_neighbor_search_method = private_nh.param<std::string>("ndt_neighbor_search_method", "DIRECT7");
@@ -225,11 +227,18 @@ private:
       }
     }
 
-    if(aligned_pub.getNumSubscribers()) {
+    if(aligned_pub.getNumSubscribers() || velodyne_pub.getNumSubscribers())
+    {
+      //pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
+      //pcl::ExtractIndices<PointT> extract;
+
       aligned->header.frame_id = "odom";
       aligned->header.stamp = cloud->header.stamp;
       aligned_pub.publish(aligned);
       alignState_pub.publish(alignFlag);
+
+      cloud->header.frame_id = "base_link";
+      velodyne_pub.publish(cloud);
     }
 
     publish_odometry(cloud_header.stamp, pose_estimator->matrix());
@@ -415,6 +424,7 @@ private:
   ros::Publisher pose_pub;
   ros::Publisher alignState_pub;
   ros::Publisher aligned_pub;
+  ros::Publisher velodyne_pub;
   ros::Publisher correctImu_pub;
 
   tf::TransformBroadcaster pose_broadcaster;

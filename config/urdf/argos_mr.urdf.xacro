@@ -16,7 +16,7 @@
     <visual>
       <origin xyz="0 0 -0.6" rpy="1.57 0.0 -1.57"/>
       <geometry>
-        <mesh filename="package://hdl_localization/config/meshes/mr_v3.stl" scale="0.002 0.002 0.002"/>
+        <mesh filename="package://hdl_localization/config/meshes/mr_v3.stl" scale="0.001 0.001 0.001"/>
       </geometry>
       <material name="silver"/>
     </visual>
@@ -30,13 +30,21 @@
   
   <link name="link2">
     <visual>
-      <origin xyz="0 0 0.15" rpy="0.0 0.0 0.0"/>
+      <origin xyz="0 0 -0.22" rpy="0.0 0.0 0.0"/>
       <geometry>
-        <box size="1.5 0.9 0.8"/>           
+        <box size="0.75 0.45 0.4"/>           
       </geometry>
       <material name="grey"/>
     </visual>
   </link>  
   
+  <joint name="velodyne_base_link" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="velodyne"/>
+  </joint>
+  
+  <link name="velodyne">
+  </link>    
   
 </robot>

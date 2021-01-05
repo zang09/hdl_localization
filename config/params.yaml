@@ -3,7 +3,7 @@ globalmap_server_nodelet:
   
   globalmap_pcd: /slam_ws/src/hdl_localization/data/yonsei_full_map.pcd
   globalmap_csv: /slam_ws/src/hdl_localization/data/map_trajectory.csv
-  downsample_resolution: 0.5
+  downsample_resolution: 0.4
   
 hdl_localization_nodelet: 
   # Topic name

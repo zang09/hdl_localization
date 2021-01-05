@@ -74,9 +74,9 @@ public:
         preRobotPosY_(0.0)
     {
         subGlobalMap_     = nh.subscribe("hdl_localization/globalmap", 1, &initialPose::globalmapHandler, this);
-        subGPS_           = nh.subscribe<sensor_msgs::NavSatFix>("pwk7/gps/fix", 200, &initialPose::gpsHandler, this, ros::TransportHints().tcpNoDelay());
+        subGPS_           = nh.subscribe<sensor_msgs::NavSatFix>("pwk7/gps/fix", 10, &initialPose::gpsHandler, this);
         subMapLLA_        = nh.subscribe<sensor_msgs::NavSatFix>("hdl_localization/gloablmap/origin", 5, &initialPose::mapOriginHandler, this);
-        subCorrectIMU_    = nh.subscribe<sensor_msgs::Imu>("hdl_localization/correct_imu", 200, &initialPose::imuHandler, this, ros::TransportHints().tcpNoDelay());
+        subCorrectIMU_    = nh.subscribe<sensor_msgs::Imu>("hdl_localization/correct_imu", 10, &initialPose::imuHandler, this);
 
         pubInitialPose_   = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1);
         pubFilteredCloud_ = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/filtered_cloud", 5, true); //test
@@ -138,7 +138,9 @@ public:
         double dY = robotPosY_ - preRobotPosY_;
         double distance = sqrt(pow(dX,2)+pow(dY,2));
 
-        if(distance > 0.1 && distance < 10.0)
+        std::cout << "Distance: " << distance << std::endl;
+
+        if(distance > 0.05 && distance < 10.0)
         {
             tf2::Transform latest_utm_pose;
             latest_utm_pose.setOrigin(tf2::Vector3(robotPosX_, robotPosY_, robotPosZ_));
@@ -202,7 +204,11 @@ public:
                 double curY = gps_odom_.pose.pose.position.y;
                 double curZ;
 
-                getHeightFromCloud(curX, curY, curZ);
+                if(!getHeightFromCloud(curX, curY, curZ)){
+                  ROS_ERROR("Coordinate is not in the map!");
+                  res.success = false;
+                  return false;
+                }
 
                 poseMsg.header.stamp = ros::Time::now();
                 poseMsg.header.frame_id = "map";
@@ -235,7 +241,7 @@ public:
         return true;
     }
 
-    void getHeightFromCloud(double x, double y, double &z)
+    bool getHeightFromCloud(double x, double y, double &z)
     {
         pcl::PointCloud<pcl::PointXYZI>::Ptr cloudFiltered(new pcl::PointCloud<pcl::PointXYZI>);
 
@@ -250,6 +256,8 @@ public:
         passY.setFilterFieldName("y");
         passY.setFilterLimits(y-5.0, y+5.0);
         passY.filter(*cloudFiltered);
+
+        if(cloudFiltered->empty()) return false;
 
         pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients());
         pcl::PointIndices::Ptr inliers (new pcl::PointIndices());
@@ -286,6 +294,8 @@ public:
             z = averageZ;
 
         pubFilteredCloud_.publish(cloudFiltered);
+
+        return true;
     }
 
     nav_msgs::Odometry cartesianToMap(const tf2::Transform& cartesian_pose)

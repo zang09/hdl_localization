@@ -99,6 +99,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        velodyne:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -108,38 +112,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 155
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: Velodyne
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Flat Squares
-      Topic: /velodyne_points
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 70.33720397949219
-        Min Value: -10.6790771484375
+        Max Value: 98.48768615722656
+        Min Value: 17.460922241210938
         Value: true
       Axis: Z
       Channel Name: z
@@ -166,14 +140,44 @@ Visualization Manager:
       Use rainbow: true
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /hdl_localization/globalmap/trajectory
       Name: Trajectory
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
-    - Alpha: 0.20000000298023224
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 0; 0; 0
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 255
+      Min Color: 0; 0; 0
+      Min Intensity: 1
+      Name: Velodyne
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.20000000298023224
+      Style: Flat Squares
+      Topic: /hdl_localization/velodyne_points
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -196,7 +200,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.20000000298023224
+      Size (m): 0.10000000149011612
       Style: Flat Squares
       Topic: /hdl_localization/aligned_points
       Unreliable: false
@@ -330,7 +334,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/flag_line
       Name: Waypoint Line
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -338,7 +342,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/robot/virtual_point
       Name: Virtual Point
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -380,9 +384,39 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/object/centroid_point
       Name: Object
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
+    - Alpha: 0.10000000149011612
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 1799
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: Segment Pure
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 5
+      Size (m): 0.009999999776482582
+      Style: Points
+      Topic: /waypoint_driving/segmented_cloud_pure
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -393,19 +427,19 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 32; 74; 135
-      Color Transformer: FlatColor
+      Color Transformer: Intensity
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 15.139200210571289
+      Max Intensity: 5
       Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: Segment
+      Min Intensity: 5
+      Name: Cluster
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 10
+      Size (Pixels): 5
       Size (m): 0.5
       Style: Points
       Topic: /waypoint_driving/clustered_cloud
@@ -413,6 +447,36 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
+    - Alpha: 0.5
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 100
+      Min Color: 0; 0; 0
+      Min Intensity: 1
+      Name: ROI
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 5
+      Size (m): 0.009999999776482582
+      Style: Points
+      Topic: /waypoint_driving/roi_cloud
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
     - Alpha: 0.699999988079071
       Blocks: 5
       Class: rviz_plugins/AerialMapDisplay
@@ -451,26 +515,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 77.3653793334961
+      Class: rviz/ThirdPersonFollower
+      Distance: 6.611087799072266
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.204973816871643
-        Y: 7.716558933258057
-        Z: -2.5625126361846924
+        X: 0.14112639427185059
+        Y: 0.10729029774665833
+        Z: -1.0608946467982605e-5
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 1.2097961902618408
       Target Frame: base_link
-      Value: Orbit (rviz)
-      Yaw: 4.448184490203857
+      Value: ThirdPersonFollower (rviz)
+      Yaw: 3.1273508071899414
     Saved: ~
 Window Geometry:
   Camera:
