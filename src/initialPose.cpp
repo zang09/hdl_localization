@@ -138,7 +138,7 @@ public:
         double dY = robotPosY_ - preRobotPosY_;
         double distance = sqrt(pow(dX,2)+pow(dY,2));
 
-        std::cout << "Distance: " << distance << std::endl;
+        //std::cout << "Distance: " << distance << std::endl;
 
         if(distance > 0.05 && distance < 10.0)
         {
