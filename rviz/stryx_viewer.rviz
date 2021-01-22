@@ -15,6 +15,7 @@ Panels:
       - /2D Pose Estimate1
       - /2D Nav Goal1
       - /Publish Point1
+      - /Publish Flag1
     Name: Tool Properties
     Splitter Ratio: 0.5886790156364441
   - Class: rviz/Views
@@ -112,8 +113,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 98.48768615722656
-        Min Value: 17.460922241210938
+        Max Value: 41.43024826049805
+        Min Value: -9.3350248336792
         Value: true
       Axis: Z
       Channel Name: z
@@ -177,7 +178,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 1
+    - Alpha: 0.699999988079071
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -201,7 +202,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.10000000149011612
-      Style: Flat Squares
+      Style: Points
       Topic: /hdl_localization/aligned_points
       Unreliable: false
       Use Fixed Frame: true
@@ -334,7 +335,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/flag_line
       Name: Waypoint Line
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -342,7 +343,7 @@ Visualization Manager:
       Marker Topic: /waypoint_driving/robot/virtual_point
       Name: Virtual Point
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -362,7 +363,7 @@ Visualization Manager:
           Scale: 1
           Value: true
         Value: true
-      Enabled: true
+      Enabled: false
       Keep: 1
       Name: Reference Angle
       Position Tolerance: 0.10000000149011612
@@ -378,13 +379,13 @@ Visualization Manager:
         Value: Arrow
       Topic: /waypoint_driving/reference_angle
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /waypoint_driving/object/centroid_point
       Name: Object
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Alpha: 0.10000000149011612
@@ -426,20 +427,20 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 32; 74; 135
-      Color Transformer: Intensity
+      Color: 92; 53; 102
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 5
+      Max Intensity: -999999
       Min Color: 0; 0; 0
-      Min Intensity: 5
+      Min Intensity: 999999
       Name: Cluster
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 5
+      Size (Pixels): 10
       Size (m): 0.5
       Style: Points
       Topic: /waypoint_driving/clustered_cloud
@@ -447,7 +448,7 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 0.5
+    - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -456,10 +457,10 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 255; 255; 255
+      Color: 0; 0; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 100
@@ -469,14 +470,14 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 5
+      Size (Pixels): 8
       Size (m): 0.009999999776482582
       Style: Points
       Topic: /waypoint_driving/roi_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 0.699999988079071
       Blocks: 5
       Class: rviz_plugins/AerialMapDisplay
@@ -515,26 +516,26 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/ThirdPersonFollower
-      Distance: 6.611087799072266
+      Class: rviz/Orbit
+      Distance: 24.371667861938477
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.14112639427185059
-        Y: 0.10729029774665833
-        Z: -1.0608946467982605e-5
+        X: -0.5384063720703125
+        Y: -0.4868311285972595
+        Z: -4.369654655456543
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.2097961902618408
+      Pitch: 1.5647963285446167
       Target Frame: base_link
-      Value: ThirdPersonFollower (rviz)
-      Yaw: 3.1273508071899414
+      Value: Orbit (rviz)
+      Yaw: 6.173181056976318
     Saved: ~
 Window Geometry:
   Camera:
@@ -546,7 +547,7 @@ Window Geometry:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: true
-  QMainWindow State: 000000ff00000000fd0000000400000000000001cf000003c2fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000219000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d006500720061010000025c000001a30000001600fffffffb0000000a0053007400720079007800000002e6000000fe0000001600fffffffb0000000800480065006c0070000000032a000000ba0000006e00fffffffb0000001c0041006900640069006e00200072006f0062006f007400690063007300000002c10000012300000000000000000000000100000100000003c2fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000003c2000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073d00000040fc0100000002fb0000000800540069006d006500000000000000073d000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000005ab000003c200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000003c2fc020000000cfb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000219000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d006500720061010000025c000001a30000001600fffffffb0000000a0053007400720079007800000002e6000000fe0000001600fffffffb0000000800480065006c0070000000032a000000ba0000006e00fffffffb0000001c0041006900640069006e00200072006f0062006f007400690063007300000002c10000012300000000000000000000000100000100000003c2fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073000000003d000003c2000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073d00000040fc0100000002fb0000000800540069006d006500000000000000073d000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000624000003c200000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Stryx:

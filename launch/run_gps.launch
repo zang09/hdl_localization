@@ -45,6 +45,6 @@
   <node pkg="$(arg project)" type="initial_pose" name="initial_pose" output="screen" respawn="true" />
    
   <!--- Start UI Node -->
-  <node pkg="localization_ui" type="localization_ui" name="localization_ui" respawn="false" />
+  <node pkg="localization_ui" type="localization_ui" name="localization_ui" output="screen" respawn="false" />
 
 </launch>
