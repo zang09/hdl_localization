@@ -44,15 +44,12 @@ public:
     get_params();
     initialize_params();
 
+    globalmap_pub_timer = nh.createWallTimer(ros::WallDuration(1.0), &GlobalmapServerNodelet::pub_once_cb, this, true, true);
+
     // publish globalmap with "latched" publisher
     map_lla_pub = nh.advertise<sensor_msgs::NavSatFix>("hdl_localization/gloablmap/origin", 5, true);
-    map_lla_pub.publish(map_origin);
-
     globalmap_pub = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/globalmap", 5, true);
-    globalmap_pub.publish(globalmap);
-
     globalmap_csv_pub = nh.advertise<visualization_msgs::Marker>("hdl_localization/globalmap/trajectory", 1, true);
-    globalmap_csv_pub.publish(line_strip);
   }
 
 private:
@@ -158,6 +155,13 @@ private:
     }
   }
 
+  void pub_once_cb(const ros::WallTimerEvent& event)
+  {
+    map_lla_pub.publish(map_origin);
+    globalmap_pub.publish(globalmap);
+    globalmap_csv_pub.publish(line_strip);
+  }
+
 private:
   // ROS
   ros::NodeHandle nh;
@@ -167,6 +171,8 @@ private:
   ros::Publisher globalmap_pub;
   ros::Publisher globalmap_csv_pub;
   ros::Publisher map_lla_pub;
+
+  ros::WallTimer globalmap_pub_timer;
 
   pcl::PointCloud<PointT>::Ptr globalmap;
   sensor_msgs::NavSatFix map_origin;
