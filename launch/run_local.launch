@@ -6,7 +6,7 @@
   
   <!--- Call urdf robot model -->
   <param name="robot_description"
-         command="$(find xacro)/xacro '$(find hdl_localization)/config/urdf/argos_mr.urdf.xacro'"/>
+         command="$(find xacro)/xacro '$(find hdl_localization)/config/urdf/argos_mr_origin.urdf.xacro'"/>
   
   <!-- Combine joint/link values to TF-->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
@@ -44,4 +44,7 @@
     
   <!--- Initial Pose Node -->
   <node pkg="$(arg project)" type="initial_pose" name="initial_pose" output="screen" respawn="true" />
+  
+   <!--- Start UI Node -->
+  <node pkg="localization_ui" type="localization_ui" name="localization_ui" output="screen" respawn="false" />
 </launch>
