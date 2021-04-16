@@ -60,12 +60,14 @@ public:
     points_sub      = mt_nh.subscribe(points_topic, 5, &HdlLocalizationNodelet::points_callback, this);
     globalmap_sub   = nh.subscribe("hdl_localization/globalmap", 1, &HdlLocalizationNodelet::globalmap_callback, this);
     initialpose_sub = nh.subscribe("/initialpose", 8, &HdlLocalizationNodelet::initialpose_callback, this);
+    local_flag_sub  = nh.subscribe("hdl_localization/localization_flag", 1, &HdlLocalizationNodelet::local_flag_callback, this);
 
-    pose_pub       = nh.advertise<nav_msgs::Odometry>("hdl_localization/odom", 5, false);
-    alignState_pub = nh.advertise<std_msgs::Bool>("hdl_localization/align_state", 1, true);
-    aligned_pub    = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/aligned_points", 5, false);
-    velodyne_pub   = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/velodyne_points", 5, false);
-    correctImu_pub = nh.advertise<sensor_msgs::Imu>("hdl_localization/imu_correct", 5, false);
+    initialpose_pub = nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("/initialpose", 1, false);
+    pose_pub        = nh.advertise<nav_msgs::Odometry>("hdl_localization/odom", 5, false);
+    alignState_pub  = nh.advertise<std_msgs::Bool>("hdl_localization/align_state", 1, true);
+    aligned_pub     = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/aligned_points", 5, false);
+    velodyne_pub    = nh.advertise<sensor_msgs::PointCloud2>("hdl_localization/velodyne_points", 5, false);
+    correctImu_pub  = nh.advertise<sensor_msgs::Imu>("hdl_localization/imu_correct", 5, false);
   }
 
 private:
@@ -129,6 +131,7 @@ private:
     extQRPY = Eigen::Quaterniond(extRPY);
 
     alignFlag = false;
+    local_state = true;
     failCnt   = 0;
   }
 
@@ -182,6 +185,28 @@ private:
 
     auto filtered = downsample(cloud);
 
+    // Set localization off
+    if (local_state == false)
+    {
+      cloud->header.frame_id = "base_link";
+      aligned_pub.publish(cloud);
+
+      publish_odometry(cloud_header.stamp, pre_odom);
+      return;
+    }
+    // Set re-localization
+    else if (local_state == 2)
+    {
+      geometry_msgs::PoseWithCovarianceStamped relocal_pose;
+      relocal_pose.pose.pose = pre_odom.pose.pose;
+      relocal_pose.header.frame_id = "map";
+      relocal_pose.header.stamp = ros::Time::now();
+
+      initialpose_pub.publish(relocal_pose);
+      local_state = true;
+      return;
+    }
+
     // predict
     if(!use_imu) {
       pose_estimator->predict(cloud_header.stamp, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
@@ -229,9 +254,6 @@ private:
 
     if(aligned_pub.getNumSubscribers() || velodyne_pub.getNumSubscribers())
     {
-      //pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-      //pcl::ExtractIndices<PointT> extract;
-
       aligned->header.frame_id = "odom";
       aligned->header.stamp = cloud->header.stamp;
       aligned_pub.publish(aligned);
@@ -274,6 +296,17 @@ private:
             Eigen::Quaternionf(q.w, q.x, q.y, q.z),
             private_nh.param<double>("cool_time_duration", 0.5))
           );
+  }
+
+  void local_flag_callback(const std_msgs::BoolConstPtr& msg) {
+    NODELET_INFO("localization flag received!!");
+    bool flag = !msg->data;
+
+    //0: false, 1: true, 2: relocal
+    if (!local_state && flag)
+      local_state = 2;
+    else if (local_state && !flag)
+      local_state = 0;
   }
 
   /**
@@ -333,6 +366,29 @@ private:
     odom.twist.twist.angular.z = 0.0;
 
     pose_pub.publish(odom);
+    pre_odom = odom;
+
+    static tf::TransformBroadcaster tfOdom2BaseLink;
+    tf::Transform tCur;
+    tf::poseMsgToTF(odom.pose.pose, tCur);
+    tf::StampedTransform odom_2_baselink = tf::StampedTransform(tCur, stamp, "odom", "base_link");
+    tfOdom2BaseLink.sendTransform(odom_2_baselink);
+  }
+
+  void publish_odometry(const ros::Time& stamp, const nav_msgs::Odometry &pose) {
+    // broadcast the transform over tf
+    static tf::TransformBroadcaster tfMap2Odom;
+    static tf::Transform map_to_odom = tf::Transform(tf::createQuaternionFromRPY(0, 0, 0), tf::Vector3(0, 0, 0));
+    tfMap2Odom.sendTransform(tf::StampedTransform(map_to_odom, stamp, "map", "odom"));
+
+    // publish the transform
+    nav_msgs::Odometry odom;
+    odom = pose;
+    odom.header.stamp = stamp;
+    odom.header.frame_id = "odom";
+
+    pose_pub.publish(odom);
+    pre_odom = odom;
 
     static tf::TransformBroadcaster tfOdom2BaseLink;
     tf::Transform tCur;
@@ -420,8 +476,10 @@ private:
   ros::Subscriber points_sub;
   ros::Subscriber globalmap_sub;
   ros::Subscriber initialpose_sub;
+  ros::Subscriber local_flag_sub;
 
   ros::Publisher pose_pub;
+  ros::Publisher initialpose_pub;
   ros::Publisher alignState_pub;
   ros::Publisher aligned_pub;
   ros::Publisher velodyne_pub;
@@ -431,6 +489,7 @@ private:
   tf::TransformListener tf_listener;
 
   std_msgs::Header cloud_header;
+  nav_msgs::Odometry pre_odom;
 
   // imu input buffer
   std::mutex imu_data_mutex;
@@ -444,7 +503,6 @@ private:
   // pose estimator
   std::mutex pose_estimator_mutex;
   std::unique_ptr<hdl_localization::PoseEstimator> pose_estimator;
-
   // processing time buffer
   boost::circular_buffer<double> processing_time;
 
@@ -457,8 +515,9 @@ private:
   Eigen::Vector3d extTrans;
   Eigen::Quaterniond extQRPY;
 
-  // Flag
+  // Flag  
   bool alignFlag;
+  int  local_state;
   int  failCnt;
 };
 
