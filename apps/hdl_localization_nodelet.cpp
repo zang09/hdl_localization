@@ -10,10 +10,10 @@
 #include <tf/transform_broadcaster.h>
 
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/Bool.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <std_msgs/Bool.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <nodelet/nodelet.h>
@@ -128,7 +128,7 @@ private:
     extTrans = Eigen::Map<const Eigen::Matrix<double, -1, -1, Eigen::RowMajor>>(extTransV.data(), 3, 1);
     extQRPY = Eigen::Quaterniond(extRPY);
 
-    alignFlag = false;
+    alignFlag.data = false;
     failCnt   = 0;
   }
 
@@ -212,9 +212,9 @@ private:
     //NODELET_INFO_STREAM("Fitness score: " << score << "\n");
 
     if(score < 0.2) {
-      if(!alignFlag) {
+      if(!alignFlag.data) {
         failCnt = 0;
-        alignFlag = true;
+        alignFlag.data = true;
         NODELET_INFO_STREAM("Correct align!");
       }
     }
@@ -222,7 +222,7 @@ private:
       failCnt++;
 
       if(failCnt == 3) {
-        alignFlag = false;
+        alignFlag.data = false;
         NODELET_INFO_STREAM("Fail align!");
       }
     }
@@ -458,7 +458,7 @@ private:
   Eigen::Quaterniond extQRPY;
 
   // Flag
-  bool alignFlag;
+  std_msgs::Bool alignFlag;
   int  failCnt;
 };
 
