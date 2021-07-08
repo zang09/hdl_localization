@@ -1,8 +1,8 @@
 globalmap_server_nodelet:
-  use_gps_map: true
+  use_gps_map: false
   
-  globalmap_pcd: /slam_ws/src/hdl_localization/data/yonsei_full_map.pcd
-  globalmap_csv: /slam_ws/src/hdl_localization/data/map_trajectory.csv
+  globalmap_pcd: /stryx_ws/src/hdl_localization/data/GlobalMap.pcd
+  globalmap_csv: /stryx_ws/src/hdl_localization/data/map_trajectory.csv
   downsample_resolution: 0.4
   
 hdl_localization_nodelet: 
@@ -33,9 +33,11 @@ hdl_localization_nodelet:
 hdl_localization:  
   # Extrinsics (lidar -> IMU)
   extrinsicTrans: [0.0, 0.0, 0.0]
-  extrinsicRot: [0, 1, 0,
-                 -1, 0, 0,
-                 0, 0, 1]
-  extrinsicRPY: [0, -1, 0,
+  
+  # 90
+  extrinsicRot: [0, -1, 0,
                  1, 0, 0,
+                 0, 0, 1]
+  extrinsicRPY: [0, 1, 0,
+                 -1, 0, 0,
                  0, 0, 1]
